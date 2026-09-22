@@ -1,0 +1,53 @@
+# Python and model tooling
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Environments and secrets
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Private data and generated ML artifacts
+data/raw/*
+data/processed/*
+models/*
+ml/runs/
+ml/logs/
+*.ckpt
+*.onnx
+*.pt
+*.pth
+*.tflite
+
+# Mobile build outputs and local configuration
+mobile/.dart_tool/
+mobile/build/
+mobile/.gradle/
+mobile/local.properties
+mobile/Pods/
+mobile/DerivedData/
+mobile/node_modules/
+
+# Keep directory placeholders
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!models/.gitkeep
+

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "model_version": "untrained",
+  "criteria": [
+    {
+      "criterion_id": "example_criterion",
+      "probabilities": {
+        "class_a": 0.5,
+        "class_b": 0.5
+      }
+    }
+  ],
+  "warnings": [
+    "Example contract only; no trained model is included."
+  ]
+}
+
