@@ -8,9 +8,9 @@ criteria.
 
 The project covers the complete path from consented image collection and
 annotation to model training, API-based inference, and presentation of results
-in a mobile application. The initial implementation remains framework-neutral
-until the dataset, criteria, annotation protocol, and deployment constraints are
-approved.
+in a mobile application. Sprint 00-01 establishes a Python API/ML workspace and
+an iOS SwiftUI navigation skeleton. Criteria, labels, data policy, and model
+architecture intentionally remain undecided until the supervisor meeting.
 
 The system is designed to report uncertainty. It should return probabilities
 and clear limitations rather than presenting a prediction as a definitive fact.
@@ -51,30 +51,62 @@ handwriting-criteria-assessment/
 │   ├── notebooks/          # Exploration only; production logic belongs in src
 │   ├── src/                # Data, training, calibration, and inference code
 │   └── tests/              # Model-pipeline tests
-├── mobile/                 # Mobile application, framework to be selected
+├── mobile/
+│   └── ios/                # SwiftUI package and screen-flow skeleton
 ├── models/                 # Local model artifacts (not committed)
 └── tests/                  # End-to-end and contract tests
 ```
 
 ## Getting Started
 
-The repository is intentionally a framework-neutral scaffold. Before coding,
-complete these documents:
+### Python API and ML workspace
+
+Python 3.11 or later is required:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[dev,ml]'
+uvicorn app.main:app --app-dir api --reload
+```
+
+Then open `http://127.0.0.1:8000/docs`. `GET /health` is operational.
+`POST /v1/analyses` validates an image and intentionally returns
+`MODEL_NOT_CONFIGURED` until an approved model exists.
+
+Run Python checks from the repository root:
+
+```bash
+ruff check .
+pytest
+```
+
+### iOS SwiftUI skeleton
+
+Open `mobile/ios/Package.swift` in Xcode and run the
+`HandwritingCriteriaAssessmentApp` scheme. The scaffold demonstrates:
+
+```text
+Home -> Capture / Upload -> Analysis -> Results
+```
+
+Camera selection, upload networking, analysis, and real result rendering are
+deliberately inactive. Command-line verification is also available:
+
+```bash
+cd mobile/ios
+swift test
+```
+
+Before model or dataset implementation, complete and approve:
 
 - `docs/criteria-definition.md`
 - `docs/ethics-and-privacy.md`
 - `docs/annotation-guidelines.md`
 
-For the Python model and API workspace, Python 3.11 or later is recommended:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-```
-
-Add framework-specific dependencies only after the architecture decision is
-recorded. Mobile setup instructions should then be added under `mobile/`.
+See [Sprint 00-01](docs/sprint-00-01.md) for scope, closure criteria, and the
+questions reserved for the supervisor meeting.
 
 ## Evaluation Principles
 
@@ -97,4 +129,3 @@ ground truth and an approved academic purpose.
 MIT is recommended for the original source code; see [LICENSE](LICENSE). Training
 data, annotations, third-party libraries, pretrained weights, and app assets may
 have different licenses or access restrictions and must be tracked separately.
-

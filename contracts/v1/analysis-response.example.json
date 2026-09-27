@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "example-analysis-id",
+  "status": "completed",
+  "model_version": null,
+  "results": [],
+  "warnings": [
+    "Contract shape only; criteria, labels, and a model have not been approved."
+  ]
+}

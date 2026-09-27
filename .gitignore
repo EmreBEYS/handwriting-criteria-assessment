@@ -38,6 +38,10 @@ ml/logs/
 *.tflite
 
 # Mobile build outputs and local configuration
+mobile/ios/.build/
+mobile/ios/.swiftpm/
+mobile/ios/*.xcodeproj/xcuserdata/
+mobile/ios/*.xcworkspace/xcuserdata/
 mobile/.dart_tool/
 mobile/build/
 mobile/.gradle/
@@ -50,4 +54,3 @@ mobile/node_modules/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !models/.gitkeep
-

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/v1/analysis-response.schema.json",
+  "title": "Analysis response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "analysis_id", "status", "model_version", "results", "warnings"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "analysis_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["accepted", "processing", "completed", "failed"] },
+    "model_version": { "type": ["string", "null"] },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_id", "values"],
+        "properties": {
+          "criterion_id": { "type": "string", "minLength": 1 },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["label", "probability"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1 },
+                "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

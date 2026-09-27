@@ -1,0 +1,1 @@
+"""Handwriting Criteria Assessment API."""

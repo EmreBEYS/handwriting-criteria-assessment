@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/v1/analysis-request.schema.json",
+  "title": "Create analysis multipart form",
+  "description": "Logical schema for the multipart/form-data request used by POST /v1/analyses.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image"],
+  "properties": {
+    "image": {
+      "type": "string",
+      "format": "binary",
+      "description": "A non-empty image/* upload within the configured size limit."
+    }
+  }
+}
