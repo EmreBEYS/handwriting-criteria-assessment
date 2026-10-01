@@ -1,8 +1,14 @@
 # Mobile Applications
 
-`ios/` contains the user-owned SwiftUI client skeleton. Android implementation
-is intentionally outside this workstream and remains the teammate's work.
+- `ios/`: Swift + SwiftUI istemcisi (kullanıcı tarafından geliştirilecek)
+- `android/`: Kotlin + Jetpack Compose istemcisi (ekip arkadaşı tarafından
+  geliştirilecek)
 
-The iOS package contains feature folders for Home, Capture/Upload, Analysis,
-and Results plus centralized navigation. It does not access the camera, photo
-library, network, or a model yet.
+İki istemci de aynı `/api/v1` OpenAPI sözleşmesini kullanır. Ortak akış; giriş,
+akademik bağlam/sınav seçimi, seri kamera çekimi, kalite uyarısı, işlem kuyruğu,
+tahmin doğrulama/düzeltme ve Excel indirmedir. Model ve PostgreSQL'e doğrudan
+bağlanmazlar; tüm erişim backend üzerinden yapılır.
+
+Mevcut iOS paketi Home → Capture/Upload → Analysis → Results navigasyon
+iskeletini içerir. Kamera, fotoğraf kitaplığı, ağ ve model bağlantıları henüz
+aktif değildir. Android uygulaması ayrı ekip çalışması olarak eklenecektir.

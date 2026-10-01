@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "scan_id": "00000000-0000-0000-0000-000000000000",
+  "status": "needs_review",
+  "model_version": "untrained",
+  "student": {
+    "predicted_number": "20260001",
+    "confidence": 0.82
+  },
+  "answers": [
+    {
+      "question_id": "00000000-0000-0000-0000-000000000001",
+      "question_number": 1,
+      "max_score": 20.0,
+      "predicted_score": 16.0,
+      "confidence": 0.74,
+      "requires_review": true
+    }
+  ],
+  "warnings": [
+    "Example contract only; no trained model is included."
+  ]
+}
