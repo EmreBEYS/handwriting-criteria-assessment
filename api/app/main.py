@@ -1,37 +1,37 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from fastapi import FastAPI, File, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, File, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import router as auth_router
 from app.config import settings
-from app.schemas import ErrorDetail, ErrorResponse, HealthResponse
+from app.database import database_is_ready
+from app.errors import APIError, exception_handlers
+from app.schemas import ErrorResponse, HealthResponse, ReadinessResponse
 
 app = FastAPI(
     title="Handwriting Criteria Assessment API",
-    version="0.1.0",
-    description="Criterion-independent API scaffold. No inference model is configured yet.",
+    version="0.2.0",
+    description="Shared API for exam-paper assessment and program-outcome analysis.",
+    exception_handlers=exception_handlers,
 )
-
-
-class APIError(Exception):
-    def __init__(self, status_code: int, code: str, message: str) -> None:
-        self.status_code = status_code
-        self.code = code
-        self.message = message
-
-
-@app.exception_handler(APIError)
-async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
-    request_id = getattr(request.state, "request_id", str(uuid4()))
-    body = ErrorResponse(
-        error=ErrorDetail(code=exc.code, message=exc.message, request_id=request_id)
-    )
-    return JSONResponse(status_code=exc.status_code, content=body.model_dump())
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+)
+app.include_router(auth_router)
 
 
 @app.middleware("http")
 async def attach_request_id(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid4()))
+    supplied_id = request.headers.get("X-Request-ID")
+    try:
+        request_id = str(UUID(supplied_id)) if supplied_id else str(uuid4())
+    except ValueError:
+        request_id = str(uuid4())
     request.state.request_id = request_id
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
@@ -39,8 +39,16 @@ async def attach_request_id(request: Request, call_next):
 
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])
-async def health() -> HealthResponse:
+@app.get("/health/live", response_model=HealthResponse, tags=["system"])
+def health() -> HealthResponse:
     return HealthResponse()
+
+
+@app.get("/health/ready", response_model=ReadinessResponse, tags=["system"])
+def readiness(ready: bool = Depends(database_is_ready)) -> ReadinessResponse:
+    if not ready:
+        raise APIError(503, "DATABASE_UNAVAILABLE", "Database connection is unavailable.")
+    return ReadinessResponse()
 
 
 @app.post(

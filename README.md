@@ -40,6 +40,10 @@ metadatasını saklar.
 - **00-02 PostgreSQL Database Design:** İlişkisel model, kısıtlar ve ilk
   migration hazırlandı. Ayrıntılar: [`docs/database-design.md`](docs/database-design.md)
   ve [`database/README.md`](database/README.md).
+- **00-03 Backend API Foundation:** Ortam ayarları, PostgreSQL bağlantısı,
+  canlılık/hazır olma uçları ve merkezi API hata zarfı tamamlandı.
+- **00-04 Authentication & User System:** Kuruma bağlı öğretim elemanı kaydı,
+  Argon2id parola özeti, access/refresh JWT ve korumalı profil ucu tamamlandı.
 
 ## Repository Structure
 
@@ -71,7 +75,8 @@ python -m pip install -e '.[dev,ml]'
 uvicorn app.main:app --app-dir api --reload
 ```
 
-Then open `http://127.0.0.1:8000/docs`. `GET /health` is operational.
+Then open `http://127.0.0.1:8000/docs`. `GET /health/live` reports liveness and
+`GET /health/ready` verifies the PostgreSQL connection.
 `POST /v1/analyses` validates an image and intentionally returns
 `MODEL_NOT_CONFIGURED` until an approved model exists.
 
