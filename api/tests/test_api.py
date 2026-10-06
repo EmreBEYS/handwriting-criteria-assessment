@@ -58,6 +58,44 @@ def authenticated_headers(client: TestClient) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def create_offering_context(client: TestClient, db_session_factory) -> tuple[dict[str, str], dict]:
+    headers = authenticated_headers(client)
+    year = client.post(
+        "/api/v1/academic-years", json={"start_year": 2026}, headers=headers
+    ).json()["data"]
+    semester = client.post(
+        "/api/v1/semesters",
+        json={"academic_year_id": year["id"], "season": "fall"},
+        headers=headers,
+    ).json()["data"]
+    with db_session_factory() as session:
+        institution = session.scalar(select(Institution).where(Institution.code == "EXAMPLE"))
+        program = Program(
+            institution_id=institution.id,
+            code="CENG",
+            name="Computer Engineering",
+        )
+        session.add(program)
+        session.commit()
+        program_id = program.id
+    course = client.post(
+        "/api/v1/courses",
+        json={"code": "CENG301", "name": "Algorithms"},
+        headers=headers,
+    ).json()["data"]
+    offering = client.post(
+        "/api/v1/course-offerings",
+        json={
+            "course_id": course["id"],
+            "semester_id": semester["id"],
+            "program_id": str(program_id),
+            "section_code": "1",
+        },
+        headers=headers,
+    ).json()["data"]
+    return headers, offering
+
+
 def test_health_reports_model_as_not_ready(client: TestClient) -> None:
     response = client.get("/health")
 
@@ -391,3 +429,98 @@ def test_courses_can_be_filtered_by_academic_year_and_semester(
     assert delete_course.json()["error"]["code"] == "COURSE_IN_USE"
     assert delete_semester.status_code == 409
     assert delete_semester.json()["error"]["code"] == "SEMESTER_IN_USE"
+
+
+def test_exam_crud_for_assigned_course_offering(client: TestClient, db_session_factory) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+
+    created = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={
+            "type": "midterm",
+            "title": "Midterm 1",
+            "total_score": "100.000",
+            "held_at": "2026-11-09T10:00:00Z",
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201
+    exam = created.json()["data"]
+    assert exam["status"] == "draft"
+    assert exam["total_score"] == "100.000"
+
+    offerings = client.get("/api/v1/course-offerings", headers=headers)
+    exams = client.get(
+        f"/api/v1/course-offerings/{offering['id']}/exams", headers=headers
+    )
+    assert [item["id"] for item in offerings.json()["data"]] == [offering["id"]]
+    assert [item["id"] for item in exams.json()["data"]] == [exam["id"]]
+
+    updated = client.patch(
+        f"/api/v1/exams/{exam['id']}",
+        json={"title": "First Midterm", "total_score": "80"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["title"] == "First Midterm"
+    assert updated.json()["data"]["total_score"] == "80.000"
+    assert client.delete(f"/api/v1/exams/{exam['id']}", headers=headers).status_code == 204
+
+
+def test_exams_are_hidden_from_unassigned_instructors(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    exam = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "final", "title": "Final"},
+        headers=headers,
+    ).json()["data"]
+
+    other = client.post(
+        "/api/v1/auth/register",
+        json=registration_payload() | {"email": "grace@example.edu"},
+    )
+    other_headers = {
+        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
+    }
+    offering_response = client.get(
+        f"/api/v1/course-offerings/{offering['id']}", headers=other_headers
+    )
+    exam_response = client.get(f"/api/v1/exams/{exam['id']}", headers=other_headers)
+
+    assert offering_response.status_code == 404
+    assert exam_response.status_code == 404
+    assert exam_response.json()["error"]["code"] == "EXAM_NOT_FOUND"
+
+
+def test_makeup_exam_can_only_replace_final_in_same_offering(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    midterm = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "midterm", "title": "Midterm"},
+        headers=headers,
+    ).json()["data"]
+    final = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "final", "title": "Final"},
+        headers=headers,
+    ).json()["data"]
+
+    invalid = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "makeup", "title": "Invalid Makeup", "replaces_exam_id": midterm["id"]},
+        headers=headers,
+    )
+    valid = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "makeup", "title": "Makeup", "replaces_exam_id": final["id"]},
+        headers=headers,
+    )
+
+    assert invalid.status_code == 422
+    assert invalid.json()["error"]["code"] == "INVALID_REPLACEMENT_EXAM"
+    assert valid.status_code == 201
+    assert valid.json()["data"]["replaces_exam_id"] == final["id"]

@@ -8,6 +8,7 @@ from app.auth import router as auth_router
 from app.config import settings
 from app.database import database_is_ready
 from app.errors import APIError, exception_handlers
+from app.exams import router as exams_router
 from app.schemas import ErrorResponse, HealthResponse, ReadinessResponse
 
 app = FastAPI(
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(academic_router)
+app.include_router(exams_router)
 
 
 @app.middleware("http")

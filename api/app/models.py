@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -9,6 +10,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     func,
@@ -32,6 +34,19 @@ class InstructorRole(StrEnum):
     owner = "owner"
     grader = "grader"
     viewer = "viewer"
+
+
+class ExamType(StrEnum):
+    midterm = "midterm"
+    final = "final"
+    makeup = "makeup"
+
+
+class ExamStatus(StrEnum):
+    draft = "draft"
+    active = "active"
+    closed = "closed"
+    archived = "archived"
 
 
 class Institution(Base):
@@ -171,4 +186,29 @@ class CourseInstructor(Base):
     )
     assigned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class Exam(Base):
+    __tablename__ = "exams"
+    __table_args__ = (UniqueConstraint("course_offering_id", "type", "title"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    course_offering_id: Mapped[UUID] = mapped_column(
+        ForeignKey("course_offerings.id"), nullable=False
+    )
+    type: Mapped[ExamType] = mapped_column(Enum(ExamType, name="exam_type"), nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    total_score: Mapped[Decimal] = mapped_column(Numeric(8, 3), default=100, nullable=False)
+    status: Mapped[ExamStatus] = mapped_column(
+        Enum(ExamStatus, name="exam_status"), default=ExamStatus.draft, nullable=False
+    )
+    held_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaces_exam_id: Mapped[UUID | None] = mapped_column(ForeignKey("exams.id"))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

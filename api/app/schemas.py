@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
@@ -254,6 +255,67 @@ class CourseOfferingResponse(BaseModel):
 
 class CourseOfferingEnvelope(BaseModel):
     data: CourseOfferingResponse
+
+
+class CourseOfferingListEnvelope(BaseModel):
+    data: list[CourseOfferingResponse]
+
+
+class ExamCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    type: Literal["midterm", "final", "makeup"]
+    title: str = Field(min_length=1, max_length=255)
+    total_score: Decimal = Field(default=Decimal("100"), gt=0, max_digits=8, decimal_places=3)
+    held_at: datetime | None = None
+    replaces_exam_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def validate_replacement(self) -> "ExamCreate":
+        if self.replaces_exam_id is not None and self.type != "makeup":
+            raise ValueError("Only a makeup exam can replace another exam")
+        return self
+
+
+class ExamUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    total_score: Decimal | None = Field(default=None, gt=0, max_digits=8, decimal_places=3)
+    held_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def reject_empty_or_null_update(self) -> "ExamUpdate":
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be supplied")
+        for field in ("title", "total_score"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
+
+class ExamResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    course_offering_id: UUID
+    type: Literal["midterm", "final", "makeup"]
+    title: str
+    total_score: Decimal
+    status: Literal["draft", "active", "closed", "archived"]
+    held_at: datetime | None
+    replaces_exam_id: UUID | None
+    created_by: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ExamEnvelope(BaseModel):
+    data: ExamResponse
+
+
+class ExamListEnvelope(BaseModel):
+    data: list[ExamResponse]
 
 
 class ProbabilityValue(BaseModel):

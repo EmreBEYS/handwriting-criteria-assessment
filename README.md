@@ -47,6 +47,9 @@ metadatasını saklar.
 - **00-05 Course & Academic Structure:** Akademik yıl, dönem ve ders CRUD
   uçları; ders açılışı; yıl/dönem filtreleri ve kurum izolasyonu tamamlandı.
   Ayrıntılar: [`docs/sprint-00-05.md`](docs/sprint-00-05.md).
+- **00-06 Exam Definition:** Atanmış ders açılışlarını listeleme; Vize, Final ve
+  Bütünleme sınavlarını taslak olarak oluşturma ve yönetme tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-06.md`](docs/sprint-00-06.md).
 
 ## Repository Structure
 
