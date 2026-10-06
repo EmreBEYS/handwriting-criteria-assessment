@@ -50,6 +50,9 @@ metadatasını saklar.
 - **00-06 Exam Definition:** Atanmış ders açılışlarını listeleme; Vize, Final ve
   Bütünleme sınavlarını taslak olarak oluşturma ve yönetme tamamlandı.
   Ayrıntılar: [`docs/sprint-00-06.md`](docs/sprint-00-06.md).
+- **00-07 Questions & PÇ Mapping:** Dinamik sorular, PÇ ağırlıkları ve toplam
+  puan/PÇ bütünlüğü denetlenen sınav etkinleştirme akışı tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-07.md`](docs/sprint-00-07.md).
 
 ## Repository Structure
 

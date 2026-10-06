@@ -1,9 +1,10 @@
 from collections.abc import Generator
+from uuid import UUID
 
 import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
-from app.models import Institution, Program, User
+from app.models import Institution, Program, ProgramOutcome, User
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -524,3 +525,149 @@ def test_makeup_exam_can_only_replace_final_in_same_offering(
     assert invalid.json()["error"]["code"] == "INVALID_REPLACEMENT_EXAM"
     assert valid.status_code == 201
     assert valid.json()["data"]["replaces_exam_id"] == final["id"]
+
+
+def test_dynamic_questions_outcome_mapping_and_exam_activation(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    with db_session_factory() as session:
+        outcomes = [
+            ProgramOutcome(
+                program_id=UUID(offering["program_id"]),
+                code="PO1",
+                description="Apply engineering knowledge",
+            ),
+            ProgramOutcome(
+                program_id=UUID(offering["program_id"]),
+                code="PO2",
+                description="Design solutions",
+            ),
+        ]
+        session.add_all(outcomes)
+        session.commit()
+        outcome_ids = [str(outcome.id) for outcome in outcomes]
+
+    available = client.get(
+        f"/api/v1/course-offerings/{offering['id']}/program-outcomes",
+        headers=headers,
+    )
+    assert [item["code"] for item in available.json()["data"]] == ["PO1", "PO2"]
+
+    exam = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "midterm", "title": "Midterm", "total_score": "100"},
+        headers=headers,
+    ).json()["data"]
+    first = client.post(
+        f"/api/v1/exams/{exam['id']}/questions",
+        json={"question_number": 1, "label": "Q1", "max_score": "40", "display_order": 1},
+        headers=headers,
+    ).json()["data"]
+    second = client.post(
+        f"/api/v1/exams/{exam['id']}/questions",
+        json={"question_number": 2, "label": "Q2", "max_score": "60", "display_order": 2},
+        headers=headers,
+    ).json()["data"]
+
+    first_mapping = client.put(
+        f"/api/v1/questions/{first['id']}/program-outcomes",
+        json={
+            "outcomes": [
+                {"program_outcome_id": outcome_ids[0], "weight": "0.4"},
+                {"program_outcome_id": outcome_ids[1], "weight": "0.6"},
+            ]
+        },
+        headers=headers,
+    )
+    second_mapping = client.put(
+        f"/api/v1/questions/{second['id']}/program-outcomes",
+        json={"outcomes": [{"program_outcome_id": outcome_ids[1], "weight": "1"}]},
+        headers=headers,
+    )
+    assert first_mapping.status_code == 200
+    assert [item["code"] for item in first_mapping.json()["data"]["program_outcomes"]] == [
+        "PO1",
+        "PO2",
+    ]
+    assert second_mapping.status_code == 200
+
+    questions = client.get(f"/api/v1/exams/{exam['id']}/questions", headers=headers)
+    activated = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
+    assert [item["question_number"] for item in questions.json()["data"]] == [1, 2]
+    assert activated.status_code == 200
+    assert activated.json()["data"]["status"] == "active"
+
+    locked_exam = client.patch(
+        f"/api/v1/exams/{exam['id']}", json={"title": "Changed"}, headers=headers
+    )
+    locked_question = client.patch(
+        f"/api/v1/questions/{first['id']}", json={"max_score": "30"}, headers=headers
+    )
+    assert locked_exam.status_code == 409
+    assert locked_question.status_code == 409
+
+
+def test_exam_activation_validates_score_total_and_outcome_weights(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    with db_session_factory() as session:
+        institution = session.scalar(select(Institution).where(Institution.code == "EXAMPLE"))
+        outcome = ProgramOutcome(
+            program_id=UUID(offering["program_id"]),
+            code="PO1",
+            description="Apply engineering knowledge",
+        )
+        other_program = Program(
+            institution_id=institution.id,
+            code="EE",
+            name="Electrical Engineering",
+        )
+        session.add_all([outcome, other_program])
+        session.flush()
+        foreign_outcome = ProgramOutcome(
+            program_id=other_program.id,
+            code="PO1",
+            description="Apply electrical engineering knowledge",
+        )
+        session.add(foreign_outcome)
+        session.commit()
+        outcome_id = str(outcome.id)
+        foreign_outcome_id = str(foreign_outcome.id)
+
+    exam = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "final", "title": "Final", "total_score": "100"},
+        headers=headers,
+    ).json()["data"]
+    question = client.post(
+        f"/api/v1/exams/{exam['id']}/questions",
+        json={"question_number": 1, "max_score": "80", "display_order": 1},
+        headers=headers,
+    ).json()["data"]
+
+    foreign_mapping = client.put(
+        f"/api/v1/questions/{question['id']}/program-outcomes",
+        json={"outcomes": [{"program_outcome_id": foreign_outcome_id, "weight": "1"}]},
+        headers=headers,
+    )
+    incomplete_weight = client.put(
+        f"/api/v1/questions/{question['id']}/program-outcomes",
+        json={"outcomes": [{"program_outcome_id": outcome_id, "weight": "0.5"}]},
+        headers=headers,
+    )
+    total_mismatch = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
+    assert foreign_mapping.status_code == 422
+    assert foreign_mapping.json()["error"]["code"] == "INVALID_PROGRAM_OUTCOME"
+    assert incomplete_weight.status_code == 422
+    assert incomplete_weight.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert total_mismatch.status_code == 409
+    assert total_mismatch.json()["error"]["code"] == "QUESTION_TOTAL_MISMATCH"
+
+    client.patch(
+        f"/api/v1/questions/{question['id']}", json={"max_score": "100"}, headers=headers
+    )
+    missing_mapping = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
+    assert missing_mapping.status_code == 409
+    assert missing_mapping.json()["error"]["code"] == "QUESTION_OUTCOMES_INCOMPLETE"

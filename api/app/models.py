@@ -136,6 +136,25 @@ class Program(Base):
     )
 
 
+class ProgramOutcome(Base):
+    __tablename__ = "program_outcomes"
+    __table_args__ = (UniqueConstraint("program_id", "code"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    program_id: Mapped[UUID] = mapped_column(
+        ForeignKey("programs.id", ondelete="CASCADE"), nullable=False
+    )
+    code: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
 class Course(Base):
     __tablename__ = "courses"
     __table_args__ = (UniqueConstraint("institution_id", "code"),)
@@ -211,4 +230,42 @@ class Exam(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class ExamQuestion(Base):
+    __tablename__ = "exam_questions"
+    __table_args__ = (
+        UniqueConstraint("exam_id", "question_number"),
+        UniqueConstraint("exam_id", "display_order"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    exam_id: Mapped[UUID] = mapped_column(
+        ForeignKey("exams.id", ondelete="CASCADE"), nullable=False
+    )
+    question_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    label: Mapped[str | None] = mapped_column(String)
+    max_score: Mapped[Decimal] = mapped_column(Numeric(8, 3), nullable=False)
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class QuestionProgramOutcome(Base):
+    __tablename__ = "question_program_outcomes"
+
+    exam_question_id: Mapped[UUID] = mapped_column(
+        ForeignKey("exam_questions.id", ondelete="CASCADE"), primary_key=True
+    )
+    program_outcome_id: Mapped[UUID] = mapped_column(
+        ForeignKey("program_outcomes.id"), primary_key=True
+    )
+    weight: Mapped[Decimal] = mapped_column(Numeric(7, 6), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
