@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from fastapi import Depends, FastAPI, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.academic import router as academic_router
 from app.auth import router as auth_router
 from app.config import settings
 from app.database import database_is_ready
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 app.include_router(auth_router)
+app.include_router(academic_router)
 
 
 @app.middleware("http")

@@ -44,6 +44,9 @@ metadatasını saklar.
   canlılık/hazır olma uçları ve merkezi API hata zarfı tamamlandı.
 - **00-04 Authentication & User System:** Kuruma bağlı öğretim elemanı kaydı,
   Argon2id parola özeti, access/refresh JWT ve korumalı profil ucu tamamlandı.
+- **00-05 Course & Academic Structure:** Akademik yıl, dönem ve ders CRUD
+  uçları; ders açılışı; yıl/dönem filtreleri ve kurum izolasyonu tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-05.md`](docs/sprint-00-05.md).
 
 ## Repository Structure
 
@@ -127,6 +130,8 @@ cp .env.example .env
 ```bash
 psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f database/migrations/001_initial_schema.sql
+psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f database/migrations/002_academic_years.sql
 ```
 
 Uygulama geliştirmeden önce açık ürün kararlarını

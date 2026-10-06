@@ -3,7 +3,7 @@ from collections.abc import Generator
 import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
-from app.models import Institution, User
+from app.models import Institution, Program, User
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -50,6 +50,12 @@ def registration_payload() -> dict[str, str]:
         "first_name": "Ada",
         "last_name": "Lovelace",
     }
+
+
+def authenticated_headers(client: TestClient) -> dict[str, str]:
+    response = client.post("/api/v1/auth/register", json=registration_payload())
+    token = response.json()["data"]["tokens"]["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_health_reports_model_as_not_ready(client: TestClient) -> None:
@@ -203,3 +209,185 @@ def test_unknown_route_uses_standard_error_envelope(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_academic_structure_requires_authentication(client: TestClient) -> None:
+    response = client.get("/api/v1/academic-years")
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+
+
+def test_academic_year_and_semester_crud(client: TestClient) -> None:
+    headers = authenticated_headers(client)
+    year_response = client.post(
+        "/api/v1/academic-years", json={"start_year": 2026}, headers=headers
+    )
+
+    assert year_response.status_code == 201
+    year = year_response.json()["data"]
+    assert year["label"] == "2026–2027"
+
+    semester_response = client.post(
+        "/api/v1/semesters",
+        json={
+            "academic_year_id": year["id"],
+            "season": "fall",
+            "starts_on": "2026-09-21",
+            "ends_on": "2027-01-15",
+        },
+        headers=headers,
+    )
+    assert semester_response.status_code == 201
+    semester = semester_response.json()["data"]
+    assert semester["start_year"] == 2026
+
+    semesters = client.get(
+        "/api/v1/semesters",
+        params={"academic_year_id": year["id"]},
+        headers=headers,
+    )
+    assert [item["id"] for item in semesters.json()["data"]] == [semester["id"]]
+
+    update = client.patch(
+        f"/api/v1/semesters/{semester['id']}",
+        json={"ends_on": "2027-01-22"},
+        headers=headers,
+    )
+    assert update.status_code == 200
+    assert update.json()["data"]["ends_on"] == "2027-01-22"
+
+    assert client.delete(f"/api/v1/semesters/{semester['id']}", headers=headers).status_code == 204
+    assert client.delete(f"/api/v1/academic-years/{year['id']}", headers=headers).status_code == 204
+
+
+def test_academic_structure_validates_duplicates_and_date_ranges(client: TestClient) -> None:
+    headers = authenticated_headers(client)
+    first = client.post("/api/v1/academic-years", json={"start_year": 2026}, headers=headers)
+    duplicate = client.post("/api/v1/academic-years", json={"start_year": 2026}, headers=headers)
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "ACADEMIC_YEAR_ALREADY_EXISTS"
+
+    invalid_semester = client.post(
+        "/api/v1/semesters",
+        json={
+            "academic_year_id": first.json()["data"]["id"],
+            "season": "fall",
+            "starts_on": "2027-01-01",
+            "ends_on": "2026-09-01",
+        },
+        headers=headers,
+    )
+    assert invalid_semester.status_code == 422
+    assert invalid_semester.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_academic_resources_are_isolated_by_institution(
+    client: TestClient, db_session_factory
+) -> None:
+    first_headers = authenticated_headers(client)
+    year = client.post(
+        "/api/v1/academic-years", json={"start_year": 2026}, headers=first_headers
+    ).json()["data"]
+
+    with db_session_factory() as session:
+        session.add(Institution(name="Other University", code="OTHER"))
+        session.commit()
+
+    second_registration = registration_payload() | {
+        "institution_code": "OTHER",
+        "email": "instructor@other.edu",
+    }
+    second_response = client.post("/api/v1/auth/register", json=second_registration)
+    second_headers = {
+        "Authorization": f"Bearer {second_response.json()['data']['tokens']['access_token']}"
+    }
+
+    response = client.get(f"/api/v1/academic-years/{year['id']}", headers=second_headers)
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "ACADEMIC_YEAR_NOT_FOUND"
+
+
+def test_courses_can_be_filtered_by_academic_year_and_semester(
+    client: TestClient, db_session_factory
+) -> None:
+    headers = authenticated_headers(client)
+    year = client.post("/api/v1/academic-years", json={"start_year": 2026}, headers=headers).json()[
+        "data"
+    ]
+    semester = client.post(
+        "/api/v1/semesters",
+        json={"academic_year_id": year["id"], "season": "fall"},
+        headers=headers,
+    ).json()["data"]
+
+    with db_session_factory() as session:
+        institution = session.scalar(select(Institution).where(Institution.code == "EXAMPLE"))
+        program = Program(
+            institution_id=institution.id,
+            code="CENG",
+            name="Computer Engineering",
+        )
+        session.add(program)
+        session.commit()
+        program_id = program.id
+
+    algorithms = client.post(
+        "/api/v1/courses",
+        json={"code": "ceng301", "name": "Algorithms"},
+        headers=headers,
+    )
+    databases = client.post(
+        "/api/v1/courses",
+        json={"code": "CENG302", "name": "Databases"},
+        headers=headers,
+    )
+    assert algorithms.status_code == 201
+    assert algorithms.json()["data"]["code"] == "CENG301"
+    assert databases.status_code == 201
+
+    offering = client.post(
+        "/api/v1/course-offerings",
+        json={
+            "course_id": algorithms.json()["data"]["id"],
+            "semester_id": semester["id"],
+            "program_id": str(program_id),
+            "section_code": "1",
+        },
+        headers=headers,
+    )
+    assert offering.status_code == 201
+    assert offering.json()["data"]["instructor_role"] == "owner"
+
+    by_year = client.get(
+        "/api/v1/courses", params={"academic_year_id": year["id"]}, headers=headers
+    )
+    by_semester = client.get(
+        "/api/v1/courses", params={"semester_id": semester["id"]}, headers=headers
+    )
+    assert [course["code"] for course in by_year.json()["data"]] == ["CENG301"]
+    assert [course["code"] for course in by_semester.json()["data"]] == ["CENG301"]
+
+    other_registration = registration_payload() | {"email": "grace@example.edu"}
+    other_response = client.post("/api/v1/auth/register", json=other_registration)
+    other_headers = {
+        "Authorization": f"Bearer {other_response.json()['data']['tokens']['access_token']}"
+    }
+    other_instructor_courses = client.get(
+        "/api/v1/courses",
+        params={"semester_id": semester["id"]},
+        headers=other_headers,
+    )
+    assert other_instructor_courses.json()["data"] == []
+
+    delete_course = client.delete(
+        f"/api/v1/courses/{algorithms.json()['data']['id']}", headers=headers
+    )
+    delete_semester = client.delete(f"/api/v1/semesters/{semester['id']}", headers=headers)
+    assert delete_course.status_code == 409
+    assert delete_course.json()["error"]["code"] == "COURSE_IN_USE"
+    assert delete_semester.status_code == 409
+    assert delete_semester.json()["error"]["code"] == "SEMESTER_IN_USE"

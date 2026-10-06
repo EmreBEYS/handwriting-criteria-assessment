@@ -12,6 +12,10 @@ Pydantic, SQLAlchemy ve Alembic; hedef API tabanı `/api/v1` olacaktır.
 korumalı kullanıcı profili eklendi. Kayıt, var olan bir `institution_code`
 gerektirir; API üzerinden kurum oluşturulmaz.
 
+00-05 kapsamında akademik yıl, dönem ve ders CRUD uçları ile ders açılışı ve
+yıl/dönem bazlı ders filtreleri eklendi. Bu uçların tamamı access JWT gerektirir
+ve verileri oturum açan kullanıcının kurumuyla sınırlar.
+
 | Yöntem | Uç | Açıklama |
 |---|---|---|
 | `GET` | `/health/live` | API süreci canlılık kontrolü |
@@ -20,6 +24,13 @@ gerektirir; API üzerinden kurum oluşturulmaz.
 | `POST` | `/api/v1/auth/login` | Kurum + e-posta + parola ile giriş |
 | `POST` | `/api/v1/auth/refresh` | Refresh JWT ile yeni token çifti |
 | `GET` | `/api/v1/users/me` | Bearer access JWT gerektiren profil |
+| `GET/POST` | `/api/v1/academic-years` | Akademik yıl listeleme/oluşturma |
+| `GET/PATCH/DELETE` | `/api/v1/academic-years/{id}` | Akademik yıl CRUD |
+| `GET/POST` | `/api/v1/semesters` | Dönem listeleme/oluşturma |
+| `GET/PATCH/DELETE` | `/api/v1/semesters/{id}` | Dönem CRUD |
+| `GET/POST` | `/api/v1/courses` | Ders listeleme/oluşturma ve filtreleme |
+| `GET/PATCH/DELETE` | `/api/v1/courses/{id}` | Ders CRUD |
+| `POST` | `/api/v1/course-offerings` | Dersi dönemde açma ve hocayı atama |
 
 API ilerleyen sprintlerde akademik bağlam, sınav/soru tanımı, asenkron tarama işi,
 sonuç onayı, PÇ analizi ve Excel dışa aktarmadan sorumludur. OCR/ML işi istek
