@@ -14,6 +14,12 @@ manifest validator. Writer identities may not cross dataset splits. Dataset
 collection and model evaluation requirements are documented in
 [`../docs/handwriting-dataset-protocol.md`](../docs/handwriting-dataset-protocol.md).
 
+The first real training pipeline uses NIST EMNIST Digits for score cells and
+student numbers. Install `.[ml]`, then run
+`python -m handwriting_ml.train_digits --epochs 3`. Dataset selection and
+limitations are documented in
+[`../docs/handwriting-model-sources.md`](../docs/handwriting-model-sources.md).
+
 Tekrar kullanılabilir üretim kodu `src/`, deney ayarları `configs/`, yalnızca
 keşif çalışmaları `notebooks/` altında tutulur. Her çıkarım model sürümünü
 kaydeder. Eğitim/değerlendirme veri ayrımı öğrenci bazında yapılmalı; düşük

@@ -28,7 +28,12 @@ dev = [
 ]
 ml = [
   "numpy>=2.0,<3",
+  "torch>=2.5,<3",
+  "torchvision>=0.20,<1",
 ]
+
+[project.scripts]
+train-emnist-digits = "handwriting_ml.train_digits:main"
 
 [tool.setuptools.packages.find]
 where = ["api", "ml/src"]
