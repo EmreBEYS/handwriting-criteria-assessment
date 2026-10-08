@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "template_id": "inonu-engineering-exam-v1",
+  "canonical_width": 1654,
+  "canonical_height": 2339,
+  "max_questions": 20,
+  "fields": {
+    "course": {"left": 0.200, "top": 0.134, "right": 0.487, "bottom": 0.157},
+    "student_name": {"left": 0.578, "top": 0.108, "right": 0.810, "bottom": 0.135},
+    "student_number": {"left": 0.578, "top": 0.136, "right": 0.810, "bottom": 0.158},
+    "outcome_header": {"left": 0.167, "top": 0.244, "right": 0.534, "bottom": 0.266}
+  },
+  "score_row": {"left": 0.167, "top": 0.266, "right": 0.534, "bottom": 0.288}
+}

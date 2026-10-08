@@ -59,6 +59,9 @@ metadatasını saklar.
 - **00-09 Scan Upload & Job Queue:** Etkin sınava güvenli görsel yükleme,
   istemci istek kimliğiyle mükerrerlik koruması ve iş durumu sorgulama tamamlandı.
   Ayrıntılar: [`docs/sprint-00-09.md`](docs/sprint-00-09.md).
+- **00-10 Exam Paper Layout Extraction:** Sınav kâğıdı yönlendirme/kalite
+  kontrolleri; ders, öğrenci ve dinamik PÇ puan hücresi çıkarımı tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-10.md`](docs/sprint-00-10.md).
 
 ## Repository Structure
 
