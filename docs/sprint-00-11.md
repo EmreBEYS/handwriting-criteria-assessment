@@ -10,11 +10,12 @@ Sprint 00-11 connects queued scans to the exam-paper prediction model:
 
 - Claims one queued job and records attempt, timing and model version metadata.
 - Reads the private image from object storage and applies the versioned 00-10 layout.
-- Requests predictions for printed course identity, handwritten student name,
-  handwritten student number and every dynamic score cell.
-- Matches the student against the active course roster, preferring an exact
-  student-number match and using an unambiguous high-similarity name only as a fallback.
+- Requests predictions for printed course identity, handwritten student number
+  and every dynamic score cell. The name crop is not required for automation.
+- Matches the student against the active course roster. It accepts an exact number or a
+  unique roster candidate at edit distance one; ambiguous candidates require review.
 - Rejects unparsable, negative and above-maximum score predictions.
+- Returns the paper's predicted total only when every question score was recognized.
 - Stores predictions separately from final scores and always sends a produced
   paper to human review.
 - Exposes predictions through the existing authenticated scan-status endpoint.

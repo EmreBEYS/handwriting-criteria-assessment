@@ -8,7 +8,7 @@ import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
 from app.models import Institution, Program, ProgramOutcome, ScanJob, Student, User
-from app.processing import process_scan
+from app.processing import _unique_number_match, process_scan
 from app.storage import get_object_storage
 from fastapi.testclient import TestClient
 from handwriting_ml.layout import ExamPaperLayout
@@ -92,9 +92,9 @@ def authenticated_headers(client: TestClient) -> dict[str, str]:
 
 def create_offering_context(client: TestClient, db_session_factory) -> tuple[dict[str, str], dict]:
     headers = authenticated_headers(client)
-    year = client.post(
-        "/api/v1/academic-years", json={"start_year": 2026}, headers=headers
-    ).json()["data"]
+    year = client.post("/api/v1/academic-years", json={"start_year": 2026}, headers=headers).json()[
+        "data"
+    ]
     semester = client.post(
         "/api/v1/semesters",
         json={"academic_year_id": year["id"], "season": "fall"},
@@ -178,6 +178,18 @@ class FakeRecognizer:
             "score": OCRPrediction("100", 0.95),
         }
         return values[field]
+
+
+def test_student_number_matching_corrects_only_unique_single_digit_error() -> None:
+    students = [
+        Student(student_number="2026001", first_name="Ada", last_name="Lovelace"),
+        Student(student_number="2026123", first_name="Grace", last_name="Hopper"),
+    ]
+
+    assert _unique_number_match(students, "2026007") is students[0]
+
+    students.append(Student(student_number="2026008", first_name="Alan", last_name="Turing"))
+    assert _unique_number_match(students, "2026007") is None
 
 
 def test_health_reports_model_as_not_ready(client: TestClient) -> None:
@@ -534,9 +546,7 @@ def test_exam_crud_for_assigned_course_offering(client: TestClient, db_session_f
     assert exam["total_score"] == "100.000"
 
     offerings = client.get("/api/v1/course-offerings", headers=headers)
-    exams = client.get(
-        f"/api/v1/course-offerings/{offering['id']}/exams", headers=headers
-    )
+    exams = client.get(f"/api/v1/course-offerings/{offering['id']}/exams", headers=headers)
     assert [item["id"] for item in offerings.json()["data"]] == [offering["id"]]
     assert [item["id"] for item in exams.json()["data"]] == [exam["id"]]
 
@@ -565,9 +575,7 @@ def test_exams_are_hidden_from_unassigned_instructors(
         "/api/v1/auth/register",
         json=registration_payload() | {"email": "grace@example.edu"},
     )
-    other_headers = {
-        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
-    }
+    other_headers = {"Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"}
     offering_response = client.get(
         f"/api/v1/course-offerings/{offering['id']}", headers=other_headers
     )
@@ -748,9 +756,7 @@ def test_exam_activation_validates_score_total_and_outcome_weights(
     assert total_mismatch.status_code == 409
     assert total_mismatch.json()["error"]["code"] == "QUESTION_TOTAL_MISMATCH"
 
-    client.patch(
-        f"/api/v1/questions/{question['id']}", json={"max_score": "100"}, headers=headers
-    )
+    client.patch(f"/api/v1/questions/{question['id']}", json={"max_score": "100"}, headers=headers)
     missing_mapping = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
     assert missing_mapping.status_code == 409
     assert missing_mapping.json()["error"]["code"] == "QUESTION_OUTCOMES_INCOMPLETE"
@@ -785,11 +791,14 @@ def test_student_crud_normalizes_number_and_supports_deactivation(client: TestCl
     assert updated.json()["data"]["last_name"] == "Mathison"
     assert updated.json()["data"]["is_active"] is False
     assert client.get("/api/v1/students", headers=headers).json()["data"] == []
-    assert len(
-        client.get("/api/v1/students", params={"active_only": False}, headers=headers).json()[
-            "data"
-        ]
-    ) == 1
+    assert (
+        len(
+            client.get("/api/v1/students", params={"active_only": False}, headers=headers).json()[
+                "data"
+            ]
+        )
+        == 1
+    )
 
 
 def test_assigned_instructor_can_manage_course_enrollments(
@@ -818,9 +827,7 @@ def test_assigned_instructor_can_manage_course_enrollments(
     assert duplicate.status_code == 409
     assert duplicate.json()["error"]["code"] == "ENROLLMENT_ALREADY_EXISTS"
 
-    roster = client.get(
-        f"/api/v1/course-offerings/{offering['id']}/enrollments", headers=headers
-    )
+    roster = client.get(f"/api/v1/course-offerings/{offering['id']}/enrollments", headers=headers)
     assert [item["student"]["id"] for item in roster.json()["data"]] == [student["id"]]
 
     removed = client.delete(
@@ -843,9 +850,7 @@ def test_inactive_student_cannot_be_enrolled(client: TestClient, db_session_fact
         json={"student_number": "2026002", "first_name": "Katherine", "last_name": "Johnson"},
         headers=headers,
     ).json()["data"]
-    client.patch(
-        f"/api/v1/students/{student['id']}", json={"is_active": False}, headers=headers
-    )
+    client.patch(f"/api/v1/students/{student['id']}", json={"is_active": False}, headers=headers)
 
     response = client.post(
         f"/api/v1/course-offerings/{offering['id']}/enrollments",
@@ -874,9 +879,7 @@ def test_students_and_enrollments_are_isolated_by_institution(
         json=registration_payload()
         | {"institution_code": "OTHER", "email": "instructor@other.edu"},
     )
-    other_headers = {
-        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
-    }
+    other_headers = {"Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"}
 
     assert client.get(f"/api/v1/students/{student['id']}", headers=other_headers).status_code == 404
     assert (
@@ -943,9 +946,7 @@ def test_scan_upload_requires_active_assigned_exam(client: TestClient, db_sessio
         "/api/v1/auth/register",
         json=registration_payload() | {"email": "grace@example.edu"},
     )
-    other_headers = {
-        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
-    }
+    other_headers = {"Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"}
     hidden = client.get(f"/api/v1/exams/{exam['id']}/scans", headers=other_headers)
     assert hidden.status_code == 404
     assert hidden.json()["error"]["code"] == "EXAM_NOT_FOUND"
@@ -997,9 +998,7 @@ def test_worker_extracts_predictions_and_matches_enrolled_student(
         headers=headers,
     ).json()["data"]
 
-    layout = ExamPaperLayout.from_json(
-        Path("ml/configs/inonu-engineering-exam-v1.json")
-    )
+    layout = ExamPaperLayout.from_json(Path("ml/configs/inonu-engineering-exam-v1.json"))
     with db_session_factory() as session:
         processed = process_scan(
             session, UUID(uploaded["id"]), object_storage, FakeRecognizer(), layout
@@ -1014,6 +1013,8 @@ def test_worker_extracts_predictions_and_matches_enrolled_student(
     assert result["paper"]["predicted_student_name"] is None
     assert result["paper"]["student_name_confidence"] is None
     assert result["paper"]["predicted_course_text"] == "CENG301 Algorithms"
+    assert result["paper"]["predicted_total_score"] == "100.000"
+    assert result["paper"]["maximum_total_score"] == "100.000"
     assert result["paper"]["review_reasons"] == []
     assert result["paper"]["answers"] == [
         {

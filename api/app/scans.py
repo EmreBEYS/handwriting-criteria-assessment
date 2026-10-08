@@ -10,7 +10,7 @@ from app.config import settings
 from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
 from app.exams import _get_exam
-from app.models import ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob, Student
+from app.models import Exam, ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob, Student
 from app.schemas import (
     ExamPaperPredictionResponse,
     PaperAnswerPredictionResponse,
@@ -45,12 +45,20 @@ def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
     if paper is None:
         return response
     matched_student = db.get(Student, paper.student_id) if paper.student_id else None
+    exam = db.get(Exam, paper.exam_id)
+    if exam is None:
+        raise RuntimeError("Exam paper references a missing exam")
     answer_rows = db.execute(
         select(PaperAnswer, ExamQuestion)
         .join(ExamQuestion, PaperAnswer.exam_question_id == ExamQuestion.id)
         .where(PaperAnswer.exam_paper_id == paper.id)
         .order_by(ExamQuestion.display_order)
     ).all()
+    predicted_total = (
+        sum((answer.predicted_score for answer, _ in answer_rows), start=0)
+        if answer_rows and all(answer.predicted_score is not None for answer, _ in answer_rows)
+        else None
+    )
     paper_response = ExamPaperPredictionResponse(
         id=paper.id,
         matched_student_id=paper.student_id,
@@ -67,6 +75,8 @@ def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
         course_confidence=paper.course_confidence,
         review_reasons=paper.review_reasons,
         status=paper.status,
+        predicted_total_score=predicted_total,
+        maximum_total_score=exam.total_score,
         answers=[
             PaperAnswerPredictionResponse(
                 question_id=question.id,

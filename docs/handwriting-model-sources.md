@@ -29,8 +29,9 @@ name from the active enrollment roster for that course. This is more reliable th
 vocabulary name recognition, preserves Turkish characters exactly and avoids collecting a
 biometric handwriting dataset.
 
-Name handwriting is only an optional review fallback when the student number does not
-uniquely match an active enrollment. It must never override an exact student-number match.
+If one digit is misread, the application may resolve a unique roster candidate at edit
+distance one, but it marks the number mismatch for review. If two students are equally
+close, it does not choose either. Name handwriting is not sent to a recognition model.
 
 ## Rejected name-recognition candidates
 

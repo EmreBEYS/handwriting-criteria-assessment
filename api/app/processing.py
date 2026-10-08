@@ -56,9 +56,47 @@ def _score(value: str, maximum: Decimal) -> Decimal | None:
     return parsed.quantize(Decimal("0.001"))
 
 
-def _match_student(
-    db: Session, offering_id: UUID, predicted_number: str, predicted_name: str
-) -> Student | None:
+def _edit_distance(left: str, right: str) -> int:
+    previous = list(range(len(right) + 1))
+    for left_index, left_character in enumerate(left, start=1):
+        current = [left_index]
+        for right_index, right_character in enumerate(right, start=1):
+            current.append(
+                min(
+                    current[-1] + 1,
+                    previous[right_index] + 1,
+                    previous[right_index - 1] + (left_character != right_character),
+                )
+            )
+        previous = current
+    return previous[-1]
+
+
+def _unique_number_match(students: list[Student], predicted_number: str) -> Student | None:
+    normalized_number = _normalized(predicted_number)
+    if not normalized_number or not normalized_number.isdigit():
+        return None
+    exact = [
+        student for student in students if _normalized(student.student_number) == normalized_number
+    ]
+    if len(exact) == 1:
+        return exact[0]
+
+    ranked = sorted(
+        [
+            (_edit_distance(normalized_number, _normalized(student.student_number)), student)
+            for student in students
+        ],
+        key=lambda candidate: candidate[0],
+    )
+    if not ranked or ranked[0][0] > 1:
+        return None
+    if len(ranked) > 1 and ranked[1][0] == ranked[0][0]:
+        return None
+    return ranked[0][1]
+
+
+def _match_student(db: Session, offering_id: UUID, predicted_number: str) -> Student | None:
     students = db.scalars(
         select(Student)
         .join(Enrollment, Enrollment.student_id == Student.id)
@@ -68,29 +106,7 @@ def _match_student(
             Student.is_active.is_(True),
         )
     ).all()
-    normalized_number = _normalized(predicted_number)
-    exact = [
-        student
-        for student in students
-        if _normalized(student.student_number) == normalized_number
-    ]
-    if len(exact) == 1:
-        return exact[0]
-    normalized_name = _normalized(predicted_name)
-    ranked = sorted(
-        (
-            SequenceMatcher(
-                None, normalized_name, _normalized(f"{student.first_name} {student.last_name}")
-            ).ratio(),
-            student,
-        )
-        for student in students
-    )
-    if not ranked or ranked[-1][0] < 0.92:
-        return None
-    if len(ranked) > 1 and ranked[-1][0] - ranked[-2][0] < 0.05:
-        return None
-    return ranked[-1][1]
+    return _unique_number_match(students, predicted_number)
 
 
 def process_scan(
@@ -130,13 +146,7 @@ def process_scan(
         number_prediction = recognizer.predict(
             extraction.regions["student_number"], "student_number"
         )
-        matched_student = _match_student(db, offering.id, number_prediction.text, "")
-        name_prediction = None
-        if matched_student is None:
-            name_prediction = recognizer.predict(extraction.regions["student_name"], "name")
-            matched_student = _match_student(
-                db, offering.id, number_prediction.text, name_prediction.text
-            )
+        matched_student = _match_student(db, offering.id, number_prediction.text)
         course_prediction = recognizer.predict(extraction.regions["course"], "course")
 
         threshold = settings.review_confidence_threshold
@@ -149,8 +159,6 @@ def process_scan(
             review_reasons.append("COURSE_MISMATCH")
         if number_prediction.confidence < threshold:
             review_reasons.append("LOW_STUDENT_NUMBER_CONFIDENCE")
-        if name_prediction is not None and name_prediction.confidence < threshold:
-            review_reasons.append("LOW_STUDENT_NAME_CONFIDENCE")
         if matched_student is None:
             review_reasons.append("STUDENT_NOT_MATCHED")
         elif _normalized(matched_student.student_number) != _normalized(number_prediction.text):
@@ -179,12 +187,8 @@ def process_scan(
             student_id=matched_student.id if matched_student else None,
             predicted_student_number=number_prediction.text.strip() or None,
             student_number_confidence=_confidence(number_prediction.confidence),
-            predicted_student_name=(
-                name_prediction.text.strip() or None if name_prediction is not None else None
-            ),
-            student_name_confidence=(
-                _confidence(name_prediction.confidence) if name_prediction is not None else None
-            ),
+            predicted_student_name=None,
+            student_name_confidence=None,
             predicted_course_text=course_prediction.text.strip() or None,
             course_confidence=_confidence(course_prediction.confidence),
             review_reasons=review_reasons,

@@ -521,6 +521,8 @@ class ExamPaperPredictionResponse(BaseModel):
     course_confidence: Decimal | None
     review_reasons: list[str]
     status: Literal["processing", "needs_review", "confirmed", "rejected"]
+    predicted_total_score: Decimal | None
+    maximum_total_score: Decimal
     answers: list[PaperAnswerPredictionResponse]
 
 
