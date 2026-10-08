@@ -261,6 +261,82 @@ class CourseOfferingListEnvelope(BaseModel):
     data: list[CourseOfferingResponse]
 
 
+class StudentCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    student_number: str = Field(min_length=1, max_length=64)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("student_number")
+    @classmethod
+    def normalize_student_number(cls, value: str) -> str:
+        return value.upper()
+
+
+class StudentUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    student_number: str | None = Field(default=None, min_length=1, max_length=64)
+    first_name: str | None = Field(default=None, min_length=1, max_length=100)
+    last_name: str | None = Field(default=None, min_length=1, max_length=100)
+    is_active: bool | None = None
+
+    @field_validator("student_number")
+    @classmethod
+    def normalize_student_number(cls, value: str | None) -> str | None:
+        return value.upper() if value is not None else None
+
+    @model_validator(mode="after")
+    def reject_empty_or_null_update(self) -> "StudentUpdate":
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be supplied")
+        for field in self.model_fields_set:
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
+
+class StudentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    institution_id: UUID
+    student_number: str
+    first_name: str
+    last_name: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class StudentEnvelope(BaseModel):
+    data: StudentResponse
+
+
+class StudentListEnvelope(BaseModel):
+    data: list[StudentResponse]
+
+
+class EnrollmentCreate(BaseModel):
+    student_id: UUID
+
+
+class EnrollmentResponse(BaseModel):
+    course_offering_id: UUID
+    student: StudentResponse
+    enrolled_at: datetime
+    is_active: bool
+
+
+class EnrollmentEnvelope(BaseModel):
+    data: EnrollmentResponse
+
+
+class EnrollmentListEnvelope(BaseModel):
+    data: list[EnrollmentResponse]
+
+
 class ExamCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

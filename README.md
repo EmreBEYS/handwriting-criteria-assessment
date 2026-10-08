@@ -53,6 +53,9 @@ metadatasını saklar.
 - **00-07 Questions & PÇ Mapping:** Dinamik sorular, PÇ ağırlıkları ve toplam
   puan/PÇ bütünlüğü denetlenen sınav etkinleştirme akışı tamamlandı.
   Ayrıntılar: [`docs/sprint-00-07.md`](docs/sprint-00-07.md).
+- **00-08 Student Roster & Enrollment:** Kurum öğrencileri, pasifleştirme ve
+  atanmış ders açılışlarına öğrenci kayıt yönetimi tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-08.md`](docs/sprint-00-08.md).
 
 ## Repository Structure
 

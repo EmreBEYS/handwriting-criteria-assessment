@@ -208,6 +208,37 @@ class CourseInstructor(Base):
     )
 
 
+class Student(Base):
+    __tablename__ = "students"
+    __table_args__ = (UniqueConstraint("institution_id", "student_number"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    institution_id: Mapped[UUID] = mapped_column(ForeignKey("institutions.id"), nullable=False)
+    student_number: Mapped[str] = mapped_column(String, nullable=False)
+    first_name: Mapped[str] = mapped_column(String, nullable=False)
+    last_name: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class Enrollment(Base):
+    __tablename__ = "enrollments"
+
+    course_offering_id: Mapped[UUID] = mapped_column(
+        ForeignKey("course_offerings.id", ondelete="CASCADE"), primary_key=True
+    )
+    student_id: Mapped[UUID] = mapped_column(ForeignKey("students.id"), primary_key=True)
+    enrolled_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
 class Exam(Base):
     __tablename__ = "exams"
     __table_args__ = (UniqueConstraint("course_offering_id", "type", "title"),)

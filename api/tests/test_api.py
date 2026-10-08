@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
-from app.models import Institution, Program, ProgramOutcome, User
+from app.models import Institution, Program, ProgramOutcome, Student, User
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -671,3 +671,137 @@ def test_exam_activation_validates_score_total_and_outcome_weights(
     missing_mapping = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
     assert missing_mapping.status_code == 409
     assert missing_mapping.json()["error"]["code"] == "QUESTION_OUTCOMES_INCOMPLETE"
+
+
+def test_student_crud_normalizes_number_and_supports_deactivation(client: TestClient) -> None:
+    headers = authenticated_headers(client)
+    created = client.post(
+        "/api/v1/students",
+        json={"student_number": " 2026abc ", "first_name": "Alan", "last_name": "Turing"},
+        headers=headers,
+    )
+
+    assert created.status_code == 201
+    student = created.json()["data"]
+    assert student["student_number"] == "2026ABC"
+
+    duplicate = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026abc", "first_name": "Other", "last_name": "Student"},
+        headers=headers,
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "STUDENT_NUMBER_ALREADY_EXISTS"
+
+    updated = client.patch(
+        f"/api/v1/students/{student['id']}",
+        json={"last_name": "Mathison", "is_active": False},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["last_name"] == "Mathison"
+    assert updated.json()["data"]["is_active"] is False
+    assert client.get("/api/v1/students", headers=headers).json()["data"] == []
+    assert len(
+        client.get("/api/v1/students", params={"active_only": False}, headers=headers).json()[
+            "data"
+        ]
+    ) == 1
+
+
+def test_assigned_instructor_can_manage_course_enrollments(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026001", "first_name": "Grace", "last_name": "Hopper"},
+        headers=headers,
+    ).json()["data"]
+
+    enrolled = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    assert enrolled.status_code == 201
+    assert enrolled.json()["data"]["student"]["student_number"] == "2026001"
+
+    duplicate = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "ENROLLMENT_ALREADY_EXISTS"
+
+    roster = client.get(
+        f"/api/v1/course-offerings/{offering['id']}/enrollments", headers=headers
+    )
+    assert [item["student"]["id"] for item in roster.json()["data"]] == [student["id"]]
+
+    removed = client.delete(
+        f"/api/v1/course-offerings/{offering['id']}/enrollments/{student['id']}",
+        headers=headers,
+    )
+    assert removed.status_code == 204
+    assert (
+        client.get(
+            f"/api/v1/course-offerings/{offering['id']}/enrollments", headers=headers
+        ).json()["data"]
+        == []
+    )
+
+
+def test_inactive_student_cannot_be_enrolled(client: TestClient, db_session_factory) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026002", "first_name": "Katherine", "last_name": "Johnson"},
+        headers=headers,
+    ).json()["data"]
+    client.patch(
+        f"/api/v1/students/{student['id']}", json={"is_active": False}, headers=headers
+    )
+
+    response = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "STUDENT_INACTIVE"
+
+
+def test_students_and_enrollments_are_isolated_by_institution(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026003", "first_name": "Edsger", "last_name": "Dijkstra"},
+        headers=headers,
+    ).json()["data"]
+
+    with db_session_factory() as session:
+        session.add(Institution(name="Other University", code="OTHER"))
+        session.commit()
+    other = client.post(
+        "/api/v1/auth/register",
+        json=registration_payload()
+        | {"institution_code": "OTHER", "email": "instructor@other.edu"},
+    )
+    other_headers = {
+        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
+    }
+
+    assert client.get(f"/api/v1/students/{student['id']}", headers=other_headers).status_code == 404
+    assert (
+        client.get(
+            f"/api/v1/course-offerings/{offering['id']}/enrollments", headers=other_headers
+        ).status_code
+        == 404
+    )
+
+    with db_session_factory() as session:
+        assert session.scalar(select(Student).where(Student.id == UUID(student["id"]))) is not None

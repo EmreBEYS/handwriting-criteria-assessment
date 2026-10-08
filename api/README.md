@@ -40,6 +40,10 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `GET/PATCH/DELETE` | `/api/v1/questions/{id}` | Taslak sınav sorusu yönetimi |
 | `PUT` | `/api/v1/questions/{id}/program-outcomes` | Soru–PÇ ağırlıklarını değiştirme |
 | `POST` | `/api/v1/exams/{id}/activate` | Bütünlük denetimi ve etkinleştirme |
+| `GET/POST` | `/api/v1/students` | Kurum öğrencilerini listeleme/oluşturma |
+| `GET/PATCH` | `/api/v1/students/{id}` | Öğrenci okuma, güncelleme ve pasifleştirme |
+| `GET/POST` | `/api/v1/course-offerings/{id}/enrollments` | Ders öğrenci listesi yönetimi |
+| `DELETE` | `/api/v1/course-offerings/{id}/enrollments/{student_id}` | Ders kaydını pasifleştirme |
 
 API ilerleyen sprintlerde akademik bağlam, sınav/soru tanımı, asenkron tarama işi,
 sonuç onayı, PÇ analizi ve Excel dışa aktarmadan sorumludur. OCR/ML işi istek
