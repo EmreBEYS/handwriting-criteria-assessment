@@ -1010,7 +1010,9 @@ def test_worker_extracts_predictions_and_matches_enrolled_student(
     assert result["status"] == "needs_review"
     assert result["model_version"] == "test-handwriting-v1"
     assert result["paper"]["matched_student_id"] == student["id"]
-    assert result["paper"]["predicted_student_name"] == "Grace Hopper"
+    assert result["paper"]["resolved_student_name"] == "Grace Hopper"
+    assert result["paper"]["predicted_student_name"] is None
+    assert result["paper"]["student_name_confidence"] is None
     assert result["paper"]["predicted_course_text"] == "CENG301 Algorithms"
     assert result["paper"]["review_reasons"] == []
     assert result["paper"]["answers"] == [

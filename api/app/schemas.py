@@ -512,6 +512,7 @@ class PaperAnswerPredictionResponse(BaseModel):
 class ExamPaperPredictionResponse(BaseModel):
     id: UUID
     matched_student_id: UUID | None
+    resolved_student_name: str | None
     predicted_student_number: str | None
     student_number_confidence: Decimal | None
     predicted_student_name: str | None

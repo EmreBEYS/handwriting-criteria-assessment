@@ -21,7 +21,18 @@ EMNIST is a character pretraining set, not an end-to-end exam-paper benchmark. B
 model is enabled in production, it must be fine-tuned and evaluated on real score-cell and
 student-number crops whose writers do not cross dataset splits.
 
-## Name recognition candidates
+## Student name resolution
+
+The production path does not require a general handwritten-name model. The digit model
+reads the student number first, then the application resolves the canonical first and last
+name from the active enrollment roster for that course. This is more reliable than open
+vocabulary name recognition, preserves Turkish characters exactly and avoids collecting a
+biometric handwriting dataset.
+
+Name handwriting is only an optional review fallback when the student number does not
+uniquely match an active enrollment. It must never override an exact student-number match.
+
+## Rejected name-recognition candidates
 
 IAM provides word and line images from 657 writers and is available for non-commercial
 research after accepting the database terms. It is useful for sequence-recognition
@@ -35,5 +46,5 @@ until the authors confirm reuse terms.
 
 - Repository: https://github.com/bartosgaye/thedataset
 
-The production name model will therefore combine a legally obtained sequence dataset with
-consented, anonymized project-specific name crops and a writer-separated evaluation split.
+These sources are therefore not required for the normal identity path. If a future research
+model uses them, it must remain a review aid and be evaluated separately on Turkish names.

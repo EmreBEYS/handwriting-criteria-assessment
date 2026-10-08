@@ -10,7 +10,7 @@ from app.config import settings
 from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
 from app.exams import _get_exam
-from app.models import ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob
+from app.models import ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob, Student
 from app.schemas import (
     ExamPaperPredictionResponse,
     PaperAnswerPredictionResponse,
@@ -44,6 +44,7 @@ def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
     paper = db.scalar(select(ExamPaper).where(ExamPaper.scan_job_id == scan.id))
     if paper is None:
         return response
+    matched_student = db.get(Student, paper.student_id) if paper.student_id else None
     answer_rows = db.execute(
         select(PaperAnswer, ExamQuestion)
         .join(ExamQuestion, PaperAnswer.exam_question_id == ExamQuestion.id)
@@ -53,6 +54,11 @@ def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
     paper_response = ExamPaperPredictionResponse(
         id=paper.id,
         matched_student_id=paper.student_id,
+        resolved_student_name=(
+            f"{matched_student.first_name} {matched_student.last_name}"
+            if matched_student is not None
+            else None
+        ),
         predicted_student_number=paper.predicted_student_number,
         student_number_confidence=paper.student_number_confidence,
         predicted_student_name=paper.predicted_student_name,

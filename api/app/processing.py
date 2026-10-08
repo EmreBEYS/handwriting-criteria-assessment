@@ -127,14 +127,17 @@ def process_scan(
 
         source = storage.get(scan.image_object_key)
         extraction = layout.extract(source, len(questions))
-        course_prediction = recognizer.predict(extraction.regions["course"], "course")
-        name_prediction = recognizer.predict(extraction.regions["student_name"], "name")
         number_prediction = recognizer.predict(
             extraction.regions["student_number"], "student_number"
         )
-        matched_student = _match_student(
-            db, offering.id, number_prediction.text, name_prediction.text
-        )
+        matched_student = _match_student(db, offering.id, number_prediction.text, "")
+        name_prediction = None
+        if matched_student is None:
+            name_prediction = recognizer.predict(extraction.regions["student_name"], "name")
+            matched_student = _match_student(
+                db, offering.id, number_prediction.text, name_prediction.text
+            )
+        course_prediction = recognizer.predict(extraction.regions["course"], "course")
 
         threshold = settings.review_confidence_threshold
         expected_course = _normalized(f"{course.code} {course.name}")
@@ -146,7 +149,7 @@ def process_scan(
             review_reasons.append("COURSE_MISMATCH")
         if number_prediction.confidence < threshold:
             review_reasons.append("LOW_STUDENT_NUMBER_CONFIDENCE")
-        if name_prediction.confidence < threshold:
+        if name_prediction is not None and name_prediction.confidence < threshold:
             review_reasons.append("LOW_STUDENT_NAME_CONFIDENCE")
         if matched_student is None:
             review_reasons.append("STUDENT_NOT_MATCHED")
@@ -176,8 +179,12 @@ def process_scan(
             student_id=matched_student.id if matched_student else None,
             predicted_student_number=number_prediction.text.strip() or None,
             student_number_confidence=_confidence(number_prediction.confidence),
-            predicted_student_name=name_prediction.text.strip() or None,
-            student_name_confidence=_confidence(name_prediction.confidence),
+            predicted_student_name=(
+                name_prediction.text.strip() or None if name_prediction is not None else None
+            ),
+            student_name_confidence=(
+                _confidence(name_prediction.confidence) if name_prediction is not None else None
+            ),
             predicted_course_text=course_prediction.text.strip() or None,
             course_confidence=_confidence(course_prediction.confidence),
             review_reasons=review_reasons,
