@@ -4,6 +4,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
@@ -56,6 +57,13 @@ class ScanStatus(StrEnum):
     saved = "saved"
     failed = "failed"
     cancelled = "cancelled"
+
+
+class PaperStatus(StrEnum):
+    processing = "processing"
+    needs_review = "needs_review"
+    confirmed = "confirmed"
+    rejected = "rejected"
 
 
 class Institution(Base):
@@ -334,6 +342,61 @@ class ScanJob(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     saved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class ExamPaper(Base):
+    __tablename__ = "exam_papers"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    scan_job_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_jobs.id"), nullable=False, unique=True
+    )
+    exam_id: Mapped[UUID] = mapped_column(ForeignKey("exams.id"), nullable=False)
+    student_id: Mapped[UUID | None] = mapped_column(ForeignKey("students.id"))
+    predicted_student_number: Mapped[str | None] = mapped_column(String)
+    student_number_confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    predicted_student_name: Mapped[str | None] = mapped_column(String)
+    student_name_confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    predicted_course_text: Mapped[str | None] = mapped_column(String)
+    course_confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    review_reasons: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    status: Mapped[PaperStatus] = mapped_column(
+        Enum(PaperStatus, name="paper_status"), default=PaperStatus.processing, nullable=False
+    )
+    confirmed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class PaperAnswer(Base):
+    __tablename__ = "paper_answers"
+    __table_args__ = (UniqueConstraint("exam_paper_id", "exam_question_id"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    exam_paper_id: Mapped[UUID] = mapped_column(
+        ForeignKey("exam_papers.id", ondelete="CASCADE"), nullable=False
+    )
+    exam_question_id: Mapped[UUID] = mapped_column(
+        ForeignKey("exam_questions.id"), nullable=False
+    )
+    predicted_score: Mapped[Decimal | None] = mapped_column(Numeric(8, 3))
+    prediction_confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    final_score: Mapped[Decimal | None] = mapped_column(Numeric(8, 3))
+    requires_review: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

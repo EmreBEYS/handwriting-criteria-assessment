@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     object_storage_secret_access_key: str = "change_me"
     object_storage_use_ssl: bool = False
 
+    model_version: str = "untrained"
+    review_confidence_threshold: float = Field(default=0.85, ge=0, le=1)
+    exam_layout_path: str = "ml/configs/inonu-engineering-exam-v1.json"
+
     @property
     def host(self) -> str:
         return self.api_host

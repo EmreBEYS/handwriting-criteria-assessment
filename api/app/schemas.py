@@ -498,6 +498,29 @@ class ScanJobResponse(BaseModel):
     completed_at: datetime | None
     saved_at: datetime | None
     updated_at: datetime
+    paper: "ExamPaperPredictionResponse | None" = None
+
+
+class PaperAnswerPredictionResponse(BaseModel):
+    question_id: UUID
+    question_number: int
+    predicted_score: Decimal | None
+    confidence: Decimal | None
+    requires_review: bool
+
+
+class ExamPaperPredictionResponse(BaseModel):
+    id: UUID
+    matched_student_id: UUID | None
+    predicted_student_number: str | None
+    student_number_confidence: Decimal | None
+    predicted_student_name: str | None
+    student_name_confidence: Decimal | None
+    predicted_course_text: str | None
+    course_confidence: Decimal | None
+    review_reasons: list[str]
+    status: Literal["processing", "needs_review", "confirmed", "rejected"]
+    answers: list[PaperAnswerPredictionResponse]
 
 
 class ScanJobEnvelope(BaseModel):

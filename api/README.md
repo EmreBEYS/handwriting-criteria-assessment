@@ -46,9 +46,10 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `DELETE` | `/api/v1/course-offerings/{id}/enrollments/{student_id}` | Ders kaydını pasifleştirme |
 | `POST` | `/api/v1/exams/{id}/scans` | Görseli özel depoya yükleme ve işi kuyruğa alma |
 | `GET` | `/api/v1/exams/{id}/scans` | Sınavın tarama işlerini listeleme |
-| `GET` | `/api/v1/scans/{id}` | Tarama işi durumunu sorgulama |
+| `GET` | `/api/v1/scans/{id}` | İş durumunu ve varsa OCR tahminlerini sorgulama |
 
 API ilerleyen sprintlerde sonuç onayı, PÇ analizi ve Excel dışa aktarmadan
-sorumludur. OCR/ML işi istek
-süresi içinde değil worker üzerinden çalıştırılır. Uygulama başladığında üretilen
+sorumludur. OCR/ML işi istek süresi içinde değil `python -m app.worker` ile
+çalışan worker üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
+`MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
 OpenAPI belgesi iki mobil istemci için sözleşmenin kaynağı olacaktır.

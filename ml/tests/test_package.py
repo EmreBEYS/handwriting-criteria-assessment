@@ -3,6 +3,7 @@ import json
 
 import handwriting_ml
 import pytest
+from handwriting_ml.dataset import DatasetManifestError, load_manifest
 from handwriting_ml.layout import ExamPaperLayout, LayoutError
 from PIL import Image, ImageDraw
 
@@ -68,3 +69,54 @@ def test_layout_rotates_landscape_capture_and_rejects_invalid_input(tmp_path) ->
         layout.extract(b"not-an-image", question_count=2)
     with pytest.raises(LayoutError, match="Question count"):
         layout.extract(image_bytes(), question_count=0)
+
+
+def test_dataset_manifest_prevents_writer_leakage(tmp_path) -> None:
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "image_path": "names/001.png",
+                        "label": "Ada Lovelace",
+                        "field_type": "name",
+                        "writer_id": "writer-001",
+                        "split": "train",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "image_path": "scores/001.png",
+                        "label": "10",
+                        "field_type": "score",
+                        "writer_id": "writer-001",
+                        "split": "test",
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DatasetManifestError, match="cannot cross"):
+        load_manifest(manifest)
+
+
+def test_dataset_manifest_loads_valid_anonymous_samples(tmp_path) -> None:
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(
+        json.dumps(
+            {
+                "image_path": "numbers/001.png",
+                "label": "2026001",
+                "field_type": "student_number",
+                "writer_id": "writer-001",
+                "split": "train",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    samples = load_manifest(manifest)
+    assert samples[0].label == "2026001"

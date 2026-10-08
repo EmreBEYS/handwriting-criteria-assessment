@@ -62,6 +62,9 @@ metadatasını saklar.
 - **00-10 Exam Paper Layout Extraction:** Sınav kâğıdı yönlendirme/kalite
   kontrolleri; ders, öğrenci ve dinamik PÇ puan hücresi çıkarımı tamamlandı.
   Ayrıntılar: [`docs/sprint-00-10.md`](docs/sprint-00-10.md).
+- **00-11 Handwriting Inference Worker:** Kuyruktaki görseli alan, OCR
+  tahminlerini ders/öğrenci/soru kurallarıyla doğrulayan ve insan incelemesine
+  hazırlayan worker tamamlandı. Ayrıntılar: [`docs/sprint-00-11.md`](docs/sprint-00-11.md).
 
 ## Repository Structure
 

@@ -10,8 +10,14 @@ from app.config import settings
 from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
 from app.exams import _get_exam
-from app.models import ExamStatus, ScanJob
-from app.schemas import ScanJobEnvelope, ScanJobListEnvelope, ScanJobResponse
+from app.models import ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob
+from app.schemas import (
+    ExamPaperPredictionResponse,
+    PaperAnswerPredictionResponse,
+    ScanJobEnvelope,
+    ScanJobListEnvelope,
+    ScanJobResponse,
+)
 from app.storage import ObjectStorage, get_object_storage
 
 router = APIRouter(prefix=settings.api_v1_prefix, tags=["scans"])
@@ -31,6 +37,42 @@ def _get_scan(db: DBSession, current_user: CurrentUser, scan_id: UUID) -> ScanJo
         raise APIError(404, "SCAN_NOT_FOUND", "Scan job was not found.")
     _get_exam(db, current_user, scan.exam_id)
     return scan
+
+
+def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
+    response = ScanJobResponse.model_validate(scan)
+    paper = db.scalar(select(ExamPaper).where(ExamPaper.scan_job_id == scan.id))
+    if paper is None:
+        return response
+    answer_rows = db.execute(
+        select(PaperAnswer, ExamQuestion)
+        .join(ExamQuestion, PaperAnswer.exam_question_id == ExamQuestion.id)
+        .where(PaperAnswer.exam_paper_id == paper.id)
+        .order_by(ExamQuestion.display_order)
+    ).all()
+    paper_response = ExamPaperPredictionResponse(
+        id=paper.id,
+        matched_student_id=paper.student_id,
+        predicted_student_number=paper.predicted_student_number,
+        student_number_confidence=paper.student_number_confidence,
+        predicted_student_name=paper.predicted_student_name,
+        student_name_confidence=paper.student_name_confidence,
+        predicted_course_text=paper.predicted_course_text,
+        course_confidence=paper.course_confidence,
+        review_reasons=paper.review_reasons,
+        status=paper.status,
+        answers=[
+            PaperAnswerPredictionResponse(
+                question_id=question.id,
+                question_number=question.question_number,
+                predicted_score=answer.predicted_score,
+                confidence=answer.prediction_confidence,
+                requires_review=answer.requires_review,
+            )
+            for answer, question in answer_rows
+        ],
+    )
+    return response.model_copy(update={"paper": paper_response})
 
 
 @router.post(
@@ -62,7 +104,7 @@ async def create_scan(
                 "Client request ID was already used for another exam.",
             )
         response.status_code = status.HTTP_200_OK
-        return ScanJobEnvelope(data=ScanJobResponse.model_validate(existing))
+        return ScanJobEnvelope(data=_scan_response(db, existing))
 
     if exam.status != ExamStatus.active:
         raise APIError(409, "EXAM_NOT_ACTIVE", "Scans can only be added to an active exam.")
@@ -111,7 +153,7 @@ async def create_scan(
         )
         if duplicate is not None and duplicate.exam_id == exam.id:
             response.status_code = status.HTTP_200_OK
-            return ScanJobEnvelope(data=ScanJobResponse.model_validate(duplicate))
+            return ScanJobEnvelope(data=_scan_response(db, duplicate))
         raise APIError(
             409, "CLIENT_REQUEST_ID_REUSED", "Client request ID has already been used."
         ) from exc
@@ -123,7 +165,7 @@ async def create_scan(
             pass
         raise
     db.refresh(scan)
-    return ScanJobEnvelope(data=ScanJobResponse.model_validate(scan))
+    return ScanJobEnvelope(data=_scan_response(db, scan))
 
 
 @router.get("/exams/{exam_id}/scans", response_model=ScanJobListEnvelope)
@@ -135,11 +177,11 @@ def list_scans(
         select(ScanJob).where(ScanJob.exam_id == exam.id).order_by(ScanJob.queued_at, ScanJob.id)
     ).all()
     return ScanJobListEnvelope(
-        data=[ScanJobResponse.model_validate(scan) for scan in scans]
+        data=[_scan_response(db, scan) for scan in scans]
     )
 
 
 @router.get("/scans/{scan_id}", response_model=ScanJobEnvelope)
 def read_scan(scan_id: UUID, db: DBSession, current_user: CurrentUser) -> ScanJobEnvelope:
     scan = _get_scan(db, current_user, scan_id)
-    return ScanJobEnvelope(data=ScanJobResponse.model_validate(scan))
+    return ScanJobEnvelope(data=_scan_response(db, scan))

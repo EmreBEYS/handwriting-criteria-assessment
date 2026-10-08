@@ -9,6 +9,11 @@ paper-layout extraction for course, student identity, question–outcome headers
 and dynamic handwritten score cells. It intentionally does not claim a trained
 handwriting model before an approved dataset and evaluated weights exist.
 
+Sprint 00-11 adds the recognizer boundary and a strict JSON Lines dataset
+manifest validator. Writer identities may not cross dataset splits. Dataset
+collection and model evaluation requirements are documented in
+[`../docs/handwriting-dataset-protocol.md`](../docs/handwriting-dataset-protocol.md).
+
 Tekrar kullanılabilir üretim kodu `src/`, deney ayarları `configs/`, yalnızca
 keşif çalışmaları `notebooks/` altında tutulur. Her çıkarım model sürümünü
 kaydeder. Eğitim/değerlendirme veri ayrımı öğrenci bazında yapılmalı; düşük

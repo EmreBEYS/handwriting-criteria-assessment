@@ -1,12 +1,19 @@
+import io
 from collections.abc import Generator
+from decimal import Decimal
+from pathlib import Path
 from uuid import UUID
 
 import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
-from app.models import Institution, Program, ProgramOutcome, Student, User
+from app.models import Institution, Program, ProgramOutcome, ScanJob, Student, User
+from app.processing import process_scan
 from app.storage import get_object_storage
 from fastapi.testclient import TestClient
+from handwriting_ml.layout import ExamPaperLayout
+from handwriting_ml.recognition import OCRPrediction, UnavailableRecognizer
+from PIL import Image, ImageDraw
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -40,6 +47,9 @@ class MemoryObjectStorage:
         if self.fail_put:
             raise RuntimeError("storage unavailable")
         self.objects[key] = (content, content_type)
+
+    def get(self, key: str) -> bytes:
+        return self.objects[key][0]
 
     def delete(self, key: str) -> None:
         self.objects.pop(key, None)
@@ -146,6 +156,28 @@ def create_active_exam(client: TestClient, db_session_factory) -> tuple[dict[str
     )
     activated = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
     return headers, activated.json()["data"]
+
+
+def valid_exam_page() -> bytes:
+    image = Image.new("RGB", (1654, 2339), "#F0F0F0")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((150, 100, 1500, 700), outline="black", width=5)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+class FakeRecognizer:
+    model_version = "test-handwriting-v1"
+
+    def predict(self, image, field: str) -> OCRPrediction:
+        values = {
+            "course": OCRPrediction("CENG301 Algorithms", 0.98),
+            "name": OCRPrediction("Grace Hopper", 0.96),
+            "student_number": OCRPrediction("2026001", 0.99),
+            "score": OCRPrediction("100", 0.95),
+        }
+        return values[field]
 
 
 def test_health_reports_model_as_not_ready(client: TestClient) -> None:
@@ -941,3 +973,84 @@ def test_scan_upload_validates_media_and_storage_availability(
     )
     assert unavailable.status_code == 503
     assert unavailable.json()["error"]["code"] == "OBJECT_STORAGE_UNAVAILABLE"
+
+
+def test_worker_extracts_predictions_and_matches_enrolled_student(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    offering_id = exam["course_offering_id"]
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026001", "first_name": "Grace", "last_name": "Hopper"},
+        headers=headers,
+    ).json()["data"]
+    client.post(
+        f"/api/v1/course-offerings/{offering_id}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "f297cb47-f7d1-49e9-b123-1ae12024c6ee"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    ).json()["data"]
+
+    layout = ExamPaperLayout.from_json(
+        Path("ml/configs/inonu-engineering-exam-v1.json")
+    )
+    with db_session_factory() as session:
+        processed = process_scan(
+            session, UUID(uploaded["id"]), object_storage, FakeRecognizer(), layout
+        )
+        assert processed.status == "needs_review"
+
+    result = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"]
+    assert result["status"] == "needs_review"
+    assert result["model_version"] == "test-handwriting-v1"
+    assert result["paper"]["matched_student_id"] == student["id"]
+    assert result["paper"]["predicted_student_name"] == "Grace Hopper"
+    assert result["paper"]["predicted_course_text"] == "CENG301 Algorithms"
+    assert result["paper"]["review_reasons"] == []
+    assert result["paper"]["answers"] == [
+        {
+            "question_id": result["paper"]["answers"][0]["question_id"],
+            "question_number": 1,
+            "predicted_score": "100.000",
+            "confidence": "0.9500",
+            "requires_review": False,
+        }
+    ]
+
+
+def test_worker_fails_explicitly_without_model_weights(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "5a64969c-4df3-49ed-944c-82c310d6ed67"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    ).json()["data"]
+    layout = ExamPaperLayout.from_json("ml/configs/inonu-engineering-exam-v1.json")
+
+    with db_session_factory() as session:
+        process_scan(
+            session,
+            UUID(uploaded["id"]),
+            object_storage,
+            UnavailableRecognizer(),
+            layout,
+        )
+        failed = session.get(ScanJob, UUID(uploaded["id"]))
+        assert failed.status == "failed"
+        assert failed.error_code == "MODEL_NOT_CONFIGURED"
+
+
+def test_score_parser_rejects_out_of_range_value() -> None:
+    from app.processing import _score
+
+    assert _score("7,5", Decimal("10")) == Decimal("7.500")
+    assert _score("11", Decimal("10")) is None

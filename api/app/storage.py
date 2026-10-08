@@ -10,6 +10,8 @@ from app.config import settings
 class ObjectStorage(Protocol):
     def put(self, key: str, content: bytes, content_type: str) -> None: ...
 
+    def get(self, key: str) -> bytes: ...
+
     def delete(self, key: str) -> None: ...
 
 
@@ -34,6 +36,10 @@ class S3ObjectStorage:
             ContentType=content_type,
             ServerSideEncryption="AES256",
         )
+
+    def get(self, key: str) -> bytes:
+        response = self.client.get_object(Bucket=self.bucket, Key=key)
+        return response["Body"].read()
 
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=key)

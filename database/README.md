@@ -11,6 +11,8 @@ psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
   -f database/migrations/001_initial_schema.sql
 psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
   -f database/migrations/002_academic_years.sql
+psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
+  -f database/migrations/003_exam_paper_predictions.sql
 ```
 
 `pgcrypto` ve `citext` eklentilerini oluşturma yetkisi gerekir. Yönetilen
