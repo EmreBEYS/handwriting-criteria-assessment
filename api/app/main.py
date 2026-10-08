@@ -10,6 +10,7 @@ from app.database import database_is_ready
 from app.errors import APIError, exception_handlers
 from app.exams import router as exams_router
 from app.questions import router as questions_router
+from app.scans import router as scans_router
 from app.schemas import ErrorResponse, HealthResponse, ReadinessResponse
 from app.students import router as students_router
 
@@ -31,6 +32,7 @@ app.include_router(academic_router)
 app.include_router(exams_router)
 app.include_router(questions_router)
 app.include_router(students_router)
+app.include_router(scans_router)
 
 
 @app.middleware("http")

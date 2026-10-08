@@ -49,6 +49,15 @@ class ExamStatus(StrEnum):
     archived = "archived"
 
 
+class ScanStatus(StrEnum):
+    queued = "queued"
+    processing = "processing"
+    needs_review = "needs_review"
+    saved = "saved"
+    failed = "failed"
+    cancelled = "cancelled"
+
+
 class Institution(Base):
     __tablename__ = "institutions"
 
@@ -299,4 +308,32 @@ class QuestionProgramOutcome(Base):
     weight: Mapped[Decimal] = mapped_column(Numeric(7, 6), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ScanJob(Base):
+    __tablename__ = "scan_jobs"
+    __table_args__ = (UniqueConstraint("requested_by", "client_request_id"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    exam_id: Mapped[UUID] = mapped_column(ForeignKey("exams.id"), nullable=False)
+    requested_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    client_request_id: Mapped[UUID] = mapped_column(nullable=False)
+    status: Mapped[ScanStatus] = mapped_column(
+        Enum(ScanStatus, name="scan_status"), default=ScanStatus.queued, nullable=False
+    )
+    image_object_key: Mapped[str] = mapped_column(String, nullable=False)
+    image_sha256: Mapped[str | None] = mapped_column(String(64))
+    model_version: Mapped[str | None] = mapped_column(String)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String)
+    error_message: Mapped[str | None] = mapped_column(String)
+    queued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    saved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

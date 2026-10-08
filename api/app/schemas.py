@@ -480,6 +480,34 @@ class ExamQuestionListEnvelope(BaseModel):
     data: list[ExamQuestionResponse]
 
 
+class ScanJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    exam_id: UUID
+    requested_by: UUID
+    client_request_id: UUID
+    status: Literal["queued", "processing", "needs_review", "saved", "failed", "cancelled"]
+    image_sha256: str | None
+    model_version: str | None
+    attempt_count: int
+    error_code: str | None
+    error_message: str | None
+    queued_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    saved_at: datetime | None
+    updated_at: datetime
+
+
+class ScanJobEnvelope(BaseModel):
+    data: ScanJobResponse
+
+
+class ScanJobListEnvelope(BaseModel):
+    data: list[ScanJobResponse]
+
+
 class ProbabilityValue(BaseModel):
     label: str
     probability: float = Field(ge=0.0, le=1.0)

@@ -33,6 +33,13 @@ class Settings(BaseSettings):
 
     cors_allowed_origins: str = "http://localhost:3000,http://localhost:8080"
 
+    object_storage_endpoint: str = "http://localhost:9000"
+    object_storage_region: str = "us-east-1"
+    object_storage_bucket: str = "exam-papers-local"
+    object_storage_access_key_id: str = "change_me"
+    object_storage_secret_access_key: str = "change_me"
+    object_storage_use_ssl: bool = False
+
     @property
     def host(self) -> str:
         return self.api_host

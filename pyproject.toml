@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "API and ML workspace for handwriting criteria assessment"
 requires-python = ">=3.11"
 dependencies = [
+  "boto3>=1.40,<2",
   "fastapi>=0.115,<1",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.8,<3",

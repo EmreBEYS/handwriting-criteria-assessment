@@ -44,8 +44,11 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `GET/PATCH` | `/api/v1/students/{id}` | Öğrenci okuma, güncelleme ve pasifleştirme |
 | `GET/POST` | `/api/v1/course-offerings/{id}/enrollments` | Ders öğrenci listesi yönetimi |
 | `DELETE` | `/api/v1/course-offerings/{id}/enrollments/{student_id}` | Ders kaydını pasifleştirme |
+| `POST` | `/api/v1/exams/{id}/scans` | Görseli özel depoya yükleme ve işi kuyruğa alma |
+| `GET` | `/api/v1/exams/{id}/scans` | Sınavın tarama işlerini listeleme |
+| `GET` | `/api/v1/scans/{id}` | Tarama işi durumunu sorgulama |
 
-API ilerleyen sprintlerde akademik bağlam, sınav/soru tanımı, asenkron tarama işi,
-sonuç onayı, PÇ analizi ve Excel dışa aktarmadan sorumludur. OCR/ML işi istek
+API ilerleyen sprintlerde sonuç onayı, PÇ analizi ve Excel dışa aktarmadan
+sorumludur. OCR/ML işi istek
 süresi içinde değil worker üzerinden çalıştırılır. Uygulama başladığında üretilen
 OpenAPI belgesi iki mobil istemci için sözleşmenin kaynağı olacaktır.

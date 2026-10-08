@@ -56,6 +56,9 @@ metadatasını saklar.
 - **00-08 Student Roster & Enrollment:** Kurum öğrencileri, pasifleştirme ve
   atanmış ders açılışlarına öğrenci kayıt yönetimi tamamlandı.
   Ayrıntılar: [`docs/sprint-00-08.md`](docs/sprint-00-08.md).
+- **00-09 Scan Upload & Job Queue:** Etkin sınava güvenli görsel yükleme,
+  istemci istek kimliğiyle mükerrerlik koruması ve iş durumu sorgulama tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-09.md`](docs/sprint-00-09.md).
 
 ## Repository Structure
 

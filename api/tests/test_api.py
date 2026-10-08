@@ -5,6 +5,7 @@ import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
 from app.models import Institution, Program, ProgramOutcome, Student, User
+from app.storage import get_object_storage
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -30,14 +31,34 @@ def db_session_factory():
     engine.dispose()
 
 
+class MemoryObjectStorage:
+    def __init__(self) -> None:
+        self.objects: dict[str, tuple[bytes, str]] = {}
+        self.fail_put = False
+
+    def put(self, key: str, content: bytes, content_type: str) -> None:
+        if self.fail_put:
+            raise RuntimeError("storage unavailable")
+        self.objects[key] = (content, content_type)
+
+    def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+
+
 @pytest.fixture
-def client(db_session_factory) -> Generator[TestClient, None, None]:
+def object_storage() -> MemoryObjectStorage:
+    return MemoryObjectStorage()
+
+
+@pytest.fixture
+def client(db_session_factory, object_storage) -> Generator[TestClient, None, None]:
     def override_get_db():
         with db_session_factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[database_is_ready] = lambda: True
+    app.dependency_overrides[get_object_storage] = lambda: object_storage
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -95,6 +116,36 @@ def create_offering_context(client: TestClient, db_session_factory) -> tuple[dic
         headers=headers,
     ).json()["data"]
     return headers, offering
+
+
+def create_active_exam(client: TestClient, db_session_factory) -> tuple[dict[str, str], dict]:
+    headers, offering = create_offering_context(client, db_session_factory)
+    with db_session_factory() as session:
+        outcome = ProgramOutcome(
+            program_id=UUID(offering["program_id"]),
+            code="PO1",
+            description="Apply engineering knowledge",
+        )
+        session.add(outcome)
+        session.commit()
+        outcome_id = str(outcome.id)
+    exam = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "midterm", "title": "Midterm", "total_score": "100"},
+        headers=headers,
+    ).json()["data"]
+    question = client.post(
+        f"/api/v1/exams/{exam['id']}/questions",
+        json={"question_number": 1, "max_score": "100", "display_order": 1},
+        headers=headers,
+    ).json()["data"]
+    client.put(
+        f"/api/v1/questions/{question['id']}/program-outcomes",
+        json={"outcomes": [{"program_outcome_id": outcome_id, "weight": "1"}]},
+        headers=headers,
+    )
+    activated = client.post(f"/api/v1/exams/{exam['id']}/activate", headers=headers)
+    return headers, activated.json()["data"]
 
 
 def test_health_reports_model_as_not_ready(client: TestClient) -> None:
@@ -805,3 +856,88 @@ def test_students_and_enrollments_are_isolated_by_institution(
 
     with db_session_factory() as session:
         assert session.scalar(select(Student).where(Student.id == UUID(student["id"]))) is not None
+
+
+def test_active_exam_accepts_idempotent_scan_upload(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    request_id = "d9766a76-77df-4af6-a0f7-a9f24341c662"
+    first = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": request_id},
+        files={"image": ("paper.png", b"png-paper-content", "image/png")},
+        headers=headers,
+    )
+    duplicate = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": request_id},
+        files={"image": ("retry.png", b"different-content", "image/png")},
+        headers=headers,
+    )
+
+    assert first.status_code == 202
+    assert duplicate.status_code == 200
+    assert duplicate.json()["data"]["id"] == first.json()["data"]["id"]
+    assert first.json()["data"]["status"] == "queued"
+    assert first.json()["data"]["image_sha256"]
+    assert "image_object_key" not in first.json()["data"]
+    assert len(object_storage.objects) == 1
+
+    listed = client.get(f"/api/v1/exams/{exam['id']}/scans", headers=headers)
+    fetched = client.get(f"/api/v1/scans/{first.json()['data']['id']}", headers=headers)
+    assert [item["id"] for item in listed.json()["data"]] == [first.json()["data"]["id"]]
+    assert fetched.json()["data"]["client_request_id"] == request_id
+
+
+def test_scan_upload_requires_active_assigned_exam(client: TestClient, db_session_factory) -> None:
+    headers, offering = create_offering_context(client, db_session_factory)
+    exam = client.post(
+        f"/api/v1/course-offerings/{offering['id']}/exams",
+        json={"type": "midterm", "title": "Draft"},
+        headers=headers,
+    ).json()["data"]
+
+    draft_response = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "c91fc6f2-5796-483d-8103-e2e4cbde9b6a"},
+        files={"image": ("paper.jpg", b"jpeg", "image/jpeg")},
+        headers=headers,
+    )
+    assert draft_response.status_code == 409
+    assert draft_response.json()["error"]["code"] == "EXAM_NOT_ACTIVE"
+
+    other = client.post(
+        "/api/v1/auth/register",
+        json=registration_payload() | {"email": "grace@example.edu"},
+    )
+    other_headers = {
+        "Authorization": f"Bearer {other.json()['data']['tokens']['access_token']}"
+    }
+    hidden = client.get(f"/api/v1/exams/{exam['id']}/scans", headers=other_headers)
+    assert hidden.status_code == 404
+    assert hidden.json()["error"]["code"] == "EXAM_NOT_FOUND"
+
+
+def test_scan_upload_validates_media_and_storage_availability(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    invalid = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "5e43b388-b70b-4508-9fae-ee601f5c9a03"},
+        files={"image": ("paper.txt", b"not-an-image", "text/plain")},
+        headers=headers,
+    )
+    assert invalid.status_code == 400
+    assert invalid.json()["error"]["code"] == "INVALID_MEDIA_TYPE"
+
+    object_storage.fail_put = True
+    unavailable = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "e599e678-b95f-4e1e-8c98-a860b35e0ebd"},
+        files={"image": ("paper.png", b"png", "image/png")},
+        headers=headers,
+    )
+    assert unavailable.status_code == 503
+    assert unavailable.json()["error"]["code"] == "OBJECT_STORAGE_UNAVAILABLE"
