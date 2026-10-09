@@ -68,6 +68,9 @@ metadatasını saklar.
 - **00-12 Human Review & Atomic Confirmation:** Öğrenci ve soru puanı
   düzeltmeleri, atomik kesinleştirme, mükerrer kâğıt koruması ve denetim kaydı
   tamamlandı. Ayrıntılar: [`docs/sprint-00-12.md`](docs/sprint-00-12.md).
+- **00-13 PÇ Analysis & Excel Export:** Yalnızca onaylı puanlardan soru/PÇ
+  analizi, özel nesne deposunda süreli Excel raporu ve yetkili indirme akışı
+  tamamlandı. Ayrıntılar: [`docs/sprint-00-13.md`](docs/sprint-00-13.md).
 
 ## Repository Structure
 

@@ -3,6 +3,7 @@ from collections.abc import Generator
 from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
+from zipfile import ZipFile
 
 import pytest
 from app.database import Base, database_is_ready, get_db
@@ -1138,6 +1139,76 @@ def test_confirmation_validation_does_not_partially_save(
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
     unchanged = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"]
     assert unchanged["status"] == "needs_review"
+
+
+def test_analysis_and_excel_use_only_confirmed_scores(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026001", "first_name": "Grace", "last_name": "Hopper"},
+        headers=headers,
+    ).json()["data"]
+    client.post(
+        f"/api/v1/course-offerings/{exam['course_offering_id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "17a034b4-911d-41c1-96b4-3fbdd36c45bb"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    ).json()["data"]
+    layout = ExamPaperLayout.from_json("ml/configs/inonu-engineering-exam-v1.json")
+    with db_session_factory() as session:
+        process_scan(session, UUID(uploaded["id"]), object_storage, FakeRecognizer(), layout)
+    paper = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"][
+        "paper"
+    ]
+    question_id = paper["answers"][0]["question_id"]
+
+    empty_analysis = client.get(
+        f"/api/v1/exams/{exam['id']}/po-analysis", headers=headers
+    ).json()["data"]
+    assert empty_analysis["confirmed_paper_count"] == 0
+    assert empty_analysis["questions"] == []
+
+    client.post(
+        f"/api/v1/papers/{paper['id']}/confirm",
+        json={
+            "student_id": student["id"],
+            "answers": [{"question_id": question_id, "final_score": "95"}],
+        },
+        headers=headers,
+    )
+    analysis = client.get(
+        f"/api/v1/exams/{exam['id']}/po-analysis", headers=headers
+    ).json()["data"]
+    assert analysis["confirmed_paper_count"] == 1
+    assert analysis["questions"][0]["average_score"] == "95.000"
+    assert analysis["questions"][0]["success_percentage"] == "95.00"
+    assert analysis["program_outcomes"][0]["achieved_score"] == "95.000"
+    assert analysis["program_outcomes"][0]["success_percentage"] == "95.00"
+
+    created = client.post(f"/api/v1/exams/{exam['id']}/exports", headers=headers)
+    assert created.status_code == 201
+    assert created.json()["data"]["status"] == "ready"
+    download = client.get(created.json()["data"]["download_url"], headers=headers)
+    assert download.status_code == 200
+    assert download.headers["content-type"].startswith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    with ZipFile(io.BytesIO(download.content)) as workbook:
+        workbook_xml = workbook.read("xl/workbook.xml").decode()
+        assert "Öğrenci Puanları" in workbook_xml
+        assert "Soru Analizi" in workbook_xml
+        assert "PÇ Analizi" in workbook_xml
+        assert "Metadata" in workbook_xml
+        student_sheet = workbook.read("xl/worksheets/sheet1.xml").decode()
+        assert "2026001" in student_sheet
+        assert ">95.0<" in student_sheet
 
 
 def test_score_parser_rejects_out_of_range_value() -> None:

@@ -66,6 +66,14 @@ class PaperStatus(StrEnum):
     rejected = "rejected"
 
 
+class ExportStatus(StrEnum):
+    queued = "queued"
+    processing = "processing"
+    ready = "ready"
+    failed = "failed"
+    expired = "expired"
+
+
 class Institution(Base):
     __tablename__ = "institutions"
 
@@ -416,3 +424,21 @@ class AuditEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class ExportJob(Base):
+    __tablename__ = "export_jobs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    exam_id: Mapped[UUID] = mapped_column(ForeignKey("exams.id"), nullable=False)
+    requested_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    status: Mapped[ExportStatus] = mapped_column(
+        Enum(ExportStatus, name="export_status"), default=ExportStatus.queued, nullable=False
+    )
+    object_key: Mapped[str | None] = mapped_column(String)
+    error_message: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

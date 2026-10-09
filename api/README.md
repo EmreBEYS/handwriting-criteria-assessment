@@ -47,9 +47,12 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `POST` | `/api/v1/exams/{id}/scans` | Görseli özel depoya yükleme ve işi kuyruğa alma |
 | `GET` | `/api/v1/exams/{id}/scans` | Sınavın tarama işlerini listeleme |
 | `GET` | `/api/v1/scans/{id}` | İş durumunu ve varsa OCR tahminlerini sorgulama |
+| `POST` | `/api/v1/papers/{id}/confirm` | İncelenen öğrenci ve soru puanlarını atomik kaydetme |
+| `GET` | `/api/v1/exams/{id}/po-analysis` | Onaylı puanlardan soru ve PÇ analizi |
+| `POST` | `/api/v1/exams/{id}/exports` | Özel depoda Excel raporu oluşturma |
+| `GET` | `/api/v1/exports/{id}/download` | Yetkili Excel raporu indirme |
 
-API ilerleyen sprintlerde sonuç onayı, PÇ analizi ve Excel dışa aktarmadan
-sorumludur. OCR/ML işi istek süresi içinde değil `python -m app.worker` ile
-çalışan worker üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
+OCR/ML işi istek süresi içinde değil `python -m app.worker` ile çalışan worker
+üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
 `MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
 OpenAPI belgesi iki mobil istemci için sözleşmenin kaynağı olacaktır.

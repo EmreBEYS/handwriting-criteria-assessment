@@ -574,6 +574,51 @@ class ExamPaperConfirmationEnvelope(BaseModel):
     data: ExamPaperConfirmationResponse
 
 
+class QuestionAnalysisResponse(BaseModel):
+    question_id: UUID
+    question_number: int
+    maximum_score: Decimal
+    average_score: Decimal
+    success_percentage: Decimal
+    response_count: int
+
+
+class ProgramOutcomeAnalysisResponse(BaseModel):
+    program_outcome_id: UUID
+    code: str
+    description: str
+    achieved_score: Decimal
+    maximum_score: Decimal
+    success_percentage: Decimal
+
+
+class ExamAnalysisResponse(BaseModel):
+    exam_id: UUID
+    confirmed_paper_count: int
+    questions: list[QuestionAnalysisResponse]
+    program_outcomes: list[ProgramOutcomeAnalysisResponse]
+
+
+class ExamAnalysisEnvelope(BaseModel):
+    data: ExamAnalysisResponse
+
+
+class ExportJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    exam_id: UUID
+    status: Literal["queued", "processing", "ready", "failed", "expired"]
+    created_at: datetime
+    completed_at: datetime | None
+    expires_at: datetime | None
+    download_url: str | None = None
+
+
+class ExportJobEnvelope(BaseModel):
+    data: ExportJobResponse
+
+
 class ProbabilityValue(BaseModel):
     label: str
     probability: float = Field(ge=0.0, le=1.0)
