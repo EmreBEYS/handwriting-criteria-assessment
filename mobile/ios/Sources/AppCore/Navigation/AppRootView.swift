@@ -11,7 +11,15 @@ public struct AppRootView: View {
         Group {
             switch session.phase {
             case .restoring:
-                ProgressView("Oturum kontrol ediliyor…")
+                ZStack {
+                    AppBackground()
+                    VStack(spacing: 18) {
+                        BrandMark()
+                        ProgressView("Oturum kontrol ediliyor…")
+                            .tint(InonuTheme.sky)
+                            .foregroundStyle(InonuTheme.textSecondary)
+                    }
+                }
             case .signedOut:
                 LoginView(session: session)
             case let .signedIn(profile):
@@ -30,20 +38,19 @@ private struct AuthenticatedRootView: View {
     @ObservedObject var session: AppSession
     let profile: UserProfile
     @State private var path: [AppRoute] = []
+    @State private var showsProfile = false
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(api: session.api) { selection in
+            HomeView(
+                api: session.api,
+                profile: profile,
+                onProfile: { showsProfile = true }
+            ) { selection in
                 path.append(.captureUpload(selection))
             }
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu(profile.displayName) {
-                        Button("Çıkış Yap", role: .destructive) {
-                            Task { await session.logout() }
-                        }
-                    }
-                }
+            .sheet(isPresented: $showsProfile) {
+                ProfileView(session: session, profile: profile)
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
@@ -66,5 +73,7 @@ private struct AuthenticatedRootView: View {
                 }
             }
         }
+        .tint(InonuTheme.sky)
+        .preferredColorScheme(.dark)
     }
 }

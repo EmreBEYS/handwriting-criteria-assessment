@@ -21,6 +21,15 @@ assessment workflow:
 - Success renders the authoritative total and explicit “Okundu ve Kaydedildi” state.
 - Multipart upload construction and navigation remain covered by Swift tests.
 
+## Visual language
+
+The iOS flow uses an İnönü mobile-inspired visual system without coupling the
+product to unrelated campus-app content: a near-black background, cyan/turquoise
+gradient accents, rounded elevated cards, compact status pills and SF Symbols.
+The same system covers login, home/exam selection, capture, review, confirmation
+and the instructor profile. Text and state indicators retain sufficient contrast
+and never rely on color alone.
+
 Set `HCA_API_BASE_URL` in the Xcode scheme for the reachable backend address. A
 device build must also provide `NSCameraUsageDescription` in its application
 target settings before camera capture is used.

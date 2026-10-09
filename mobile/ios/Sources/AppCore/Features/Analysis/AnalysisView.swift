@@ -103,68 +103,160 @@ struct AnalysisView: View {
     }
 
     var body: some View {
-        Form {
-            if model.scan?.isPending != false {
-                Section {
-                    ProgressView("Kâğıt analiz ediliyor…")
-                }
-            }
-            if let paper = model.scan?.paper {
-                Section("Öğrenci") {
-                    if let number = paper.predictedStudentNumber {
-                        LabeledContent("Tahmin", value: number)
+        ZStack {
+            AppBackground()
+            ScrollView {
+                VStack(spacing: 22) {
+                    ScreenTitle(
+                        eyebrow: "Model Sonucu",
+                        title: "Tahmini incele",
+                        subtitle: "Öğrenci ve soru puanlarını kontrol ettikten sonra kesinleştirin."
+                    )
+                    if model.scan?.isPending != false {
+                        AppCard {
+                            HStack(spacing: 16) {
+                                ProgressView().tint(InonuTheme.sky)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Kâğıt analiz ediliyor")
+                                        .font(.headline)
+                                    Text("Bu ekran sonuç hazır olduğunda otomatik güncellenecek.")
+                                        .font(.caption)
+                                        .foregroundStyle(InonuTheme.textSecondary)
+                                }
+                            }
+                        }
                     }
-                    Picker("Kesin öğrenci", selection: $model.selectedStudentID) {
-                        Text("Seçin").tag(UUID?.none)
-                        ForEach(model.students) { student in
-                            Text(student.displayName).tag(Optional(student.id))
+                    if let paper = model.scan?.paper {
+                        AppCard {
+                            VStack(alignment: .leading, spacing: 18) {
+                                HStack {
+                                    IconBadge(systemName: "person.text.rectangle.fill")
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("Öğrenci Eşleştirme")
+                                            .font(.headline)
+                                        if let number = paper.predictedStudentNumber {
+                                            Text("Model tahmini: \(number)")
+                                                .font(.caption)
+                                                .foregroundStyle(InonuTheme.textSecondary)
+                                        }
+                                    }
+                                }
+                                Picker("Kesin öğrenci", selection: $model.selectedStudentID) {
+                                    Text("Öğrenci seçin").tag(UUID?.none)
+                                    ForEach(model.students) { student in
+                                        Text(student.displayName).tag(Optional(student.id))
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                                .background(InonuTheme.elevatedSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 13))
+                            }
+                        }
+
+                        AppCard {
+                            VStack(alignment: .leading, spacing: 15) {
+                                HStack {
+                                    IconBadge(systemName: "list.number")
+                                    Text("Soru Puanları")
+                                        .font(.headline)
+                                }
+                                ForEach(paper.answers) { answer in
+                                    HStack(spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text("Soru \(answer.questionNumber)")
+                                                .font(.body.weight(.semibold))
+                                            if answer.requiresReview {
+                                                StatusPill(
+                                                    title: "Kontrol gerekli",
+                                                    systemName: "exclamationmark.triangle.fill",
+                                                    color: .orange
+                                                )
+                                            }
+                                        }
+                                        Spacer()
+                                        TextField(
+                                            "0",
+                                            text: Binding(
+                                                get: {
+                                                    model.scoreTexts[answer.questionID, default: ""]
+                                                },
+                                                set: { model.scoreTexts[answer.questionID] = $0 }
+                                            )
+                                        )
+                                        .textFieldStyle(.plain)
+                                        .multilineTextAlignment(.trailing)
+                                        .padding(11)
+                                        .frame(width: 78)
+                                        .background(InonuTheme.elevatedSurface)
+                                        .clipShape(RoundedRectangle(cornerRadius: 11))
+                                        Text("/ \(answer.maximumScore)")
+                                            .font(.subheadline.monospacedDigit())
+                                            .foregroundStyle(InonuTheme.textSecondary)
+                                    }
+                                    if answer.id != paper.answers.last?.id {
+                                        Divider().overlay(InonuTheme.border)
+                                    }
+                                }
+                            }
+                        }
+
+                        if !paper.reviewReasons.isEmpty {
+                            AppCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("İNCELEME UYARILARI")
+                                        .font(.caption.bold())
+                                        .tracking(1.2)
+                                        .foregroundStyle(.orange)
+                                    ForEach(paper.reviewReasons, id: \.self) { reason in
+                                        Label(reason, systemImage: "exclamationmark.triangle")
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                        }
+
+                        AppCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Düzeltme notu")
+                                    .font(.headline)
+                                TextField("İsteğe bağlı açıklama", text: $model.correctionReason)
+                                    .textFieldStyle(.plain)
+                                    .padding(12)
+                                    .background(InonuTheme.elevatedSurface)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
+
+                        Button {
+                            Task {
+                                do {
+                                    onSaved(try await model.confirm())
+                                } catch {
+                                    model.errorMessage = error.localizedDescription
+                                }
+                            }
+                        } label: {
+                            Label("Onayla ve Kaydet", systemImage: "checkmark.seal.fill")
+                        }
+                        .buttonStyle(PrimaryActionButtonStyle())
+                        .disabled(model.selectedStudentID == nil || model.isWorking)
+                        .opacity(model.selectedStudentID == nil || model.isWorking ? 0.5 : 1)
+                    }
+                    if let errorMessage = model.errorMessage {
+                        AppCard {
+                            Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(InonuTheme.danger)
                         }
                     }
                 }
-                Section("Soru Puanları") {
-                    ForEach(paper.answers) { answer in
-                        HStack {
-                            Text("Soru \(answer.questionNumber)")
-                            Spacer()
-                            TextField(
-                                "0–\(answer.maximumScore)",
-                                text: Binding(
-                                    get: { model.scoreTexts[answer.questionID, default: ""] },
-                                    set: { model.scoreTexts[answer.questionID] = $0 }
-                                )
-                            )
-                            .frame(width: 100)
-                            Text("/ \(answer.maximumScore)").foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                if !paper.reviewReasons.isEmpty {
-                    Section("İnceleme Uyarıları") {
-                        ForEach(paper.reviewReasons, id: \.self) { reason in
-                            Label(reason, systemImage: "exclamationmark.triangle")
-                        }
-                    }
-                }
-                Section("Düzeltme Notu") {
-                    TextField("İsteğe bağlı", text: $model.correctionReason)
-                }
-                Button("Onayla ve Kaydet") {
-                    Task {
-                        do {
-                            onSaved(try await model.confirm())
-                        } catch {
-                            model.errorMessage = error.localizedDescription
-                        }
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(model.selectedStudentID == nil || model.isWorking)
-            }
-            if let errorMessage = model.errorMessage {
-                Text(errorMessage).foregroundStyle(.red)
+                .padding(20)
             }
         }
         .navigationTitle("Tahmini İncele")
+        .inonuNavigationChrome()
+        .preferredColorScheme(.dark)
         .task { await model.loadUntilReviewable() }
     }
 }
