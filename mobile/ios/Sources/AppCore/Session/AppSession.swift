@@ -20,8 +20,11 @@ public final class AppSession: ObservableObject {
     }
 
     public convenience init() {
+        let configuredURL = ProcessInfo.processInfo.environment["HCA_API_BASE_URL"]
+            .flatMap(URL.init(string:))
+            ?? URL(string: "http://127.0.0.1:8000")!
         self.init(
-            api: APIClient(baseURL: URL(string: "http://127.0.0.1:8000")!)
+            api: APIClient(baseURL: configuredURL)
         )
     }
 

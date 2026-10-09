@@ -11,7 +11,7 @@
     {
       "question_id": "00000000-0000-0000-0000-000000000001",
       "question_number": 1,
-      "max_score": 20.0,
+      "maximum_score": 20.0,
       "predicted_score": 16.0,
       "confidence": 0.74,
       "requires_review": true

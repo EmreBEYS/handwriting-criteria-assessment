@@ -85,7 +85,15 @@ public struct CourseOffering: Codable, Hashable, Identifiable, Sendable {
     public let academicYearID: UUID
     public let programID: UUID
     public let sectionCode: String
+    public let courseCode: String
+    public let courseName: String
+    public let academicYearLabel: String
+    public let season: String
     public let instructorRole: String
+
+    public var displayName: String {
+        "\(courseCode) — \(courseName) (\(academicYearLabel) / \(season == "fall" ? "Güz" : "Bahar"))"
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -94,7 +102,144 @@ public struct CourseOffering: Codable, Hashable, Identifiable, Sendable {
         case academicYearID = "academic_year_id"
         case programID = "program_id"
         case sectionCode = "section_code"
+        case courseCode = "course_code"
+        case courseName = "course_name"
+        case academicYearLabel = "academic_year_label"
+        case season
         case instructorRole = "instructor_role"
+    }
+}
+
+public struct RosterStudent: Codable, Hashable, Identifiable, Sendable {
+    public let id: UUID
+    public let studentNumber: String
+    public let firstName: String
+    public let lastName: String
+
+    public var displayName: String { "\(studentNumber) — \(firstName) \(lastName)" }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case studentNumber = "student_number"
+        case firstName = "first_name"
+        case lastName = "last_name"
+    }
+}
+
+public struct Enrollment: Codable, Hashable, Sendable {
+    public let student: RosterStudent
+    public let isActive: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case student
+        case isActive = "is_active"
+    }
+}
+
+public struct PaperAnswerPrediction: Codable, Hashable, Identifiable, Sendable {
+    public var id: UUID { questionID }
+    public let questionID: UUID
+    public let questionNumber: Int
+    public let maximumScore: String
+    public let predictedScore: String?
+    public let confidence: String?
+    public let requiresReview: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case questionID = "question_id"
+        case questionNumber = "question_number"
+        case maximumScore = "maximum_score"
+        case predictedScore = "predicted_score"
+        case confidence
+        case requiresReview = "requires_review"
+    }
+}
+
+public struct ExamPaperPrediction: Codable, Hashable, Sendable {
+    public let id: UUID
+    public let matchedStudentID: UUID?
+    public let resolvedStudentName: String?
+    public let predictedStudentNumber: String?
+    public let studentNumberConfidence: String?
+    public let reviewReasons: [String]
+    public let status: String
+    public let predictedTotalScore: String?
+    public let maximumTotalScore: String
+    public let answers: [PaperAnswerPrediction]
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, answers
+        case matchedStudentID = "matched_student_id"
+        case resolvedStudentName = "resolved_student_name"
+        case predictedStudentNumber = "predicted_student_number"
+        case studentNumberConfidence = "student_number_confidence"
+        case reviewReasons = "review_reasons"
+        case predictedTotalScore = "predicted_total_score"
+        case maximumTotalScore = "maximum_total_score"
+    }
+}
+
+public struct ScanJob: Codable, Hashable, Identifiable, Sendable {
+    public let id: UUID
+    public let examID: UUID
+    public let status: String
+    public let modelVersion: String?
+    public let errorCode: String?
+    public let errorMessage: String?
+    public let savedAt: String?
+    public let paper: ExamPaperPrediction?
+
+    public var isPending: Bool { status == "queued" || status == "processing" }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, paper
+        case examID = "exam_id"
+        case modelVersion = "model_version"
+        case errorCode = "error_code"
+        case errorMessage = "error_message"
+        case savedAt = "saved_at"
+    }
+}
+
+public struct FinalAnswerInput: Encodable, Equatable, Sendable {
+    public let questionID: UUID
+    public let finalScore: String
+
+    enum CodingKeys: String, CodingKey {
+        case questionID = "question_id"
+        case finalScore = "final_score"
+    }
+}
+
+public struct ConfirmationInput: Encodable, Equatable, Sendable {
+    public let studentID: UUID
+    public let answers: [FinalAnswerInput]
+    public let correctionReason: String?
+
+    enum CodingKeys: String, CodingKey {
+        case studentID = "student_id"
+        case answers
+        case correctionReason = "correction_reason"
+    }
+}
+
+public struct ConfirmationResult: Codable, Hashable, Sendable {
+    public let paperID: UUID
+    public let scanID: UUID
+    public let status: String
+    public let studentID: UUID
+    public let totalScore: String
+    public let maximumTotalScore: String
+    public let savedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case paperID = "paper_id"
+        case scanID = "scan_id"
+        case studentID = "student_id"
+        case totalScore = "total_score"
+        case maximumTotalScore = "maximum_total_score"
+        case savedAt = "saved_at"
     }
 }
 

@@ -496,6 +496,10 @@ def test_courses_can_be_filtered_by_academic_year_and_semester(
     )
     assert offering.status_code == 201
     assert offering.json()["data"]["instructor_role"] == "owner"
+    assert offering.json()["data"]["course_code"] == "CENG301"
+    assert offering.json()["data"]["course_name"] == "Algorithms"
+    assert offering.json()["data"]["academic_year_label"] == "2026–2027"
+    assert offering.json()["data"]["season"] == "fall"
 
     by_year = client.get(
         "/api/v1/courses", params={"academic_year_id": year["id"]}, headers=headers
@@ -1021,6 +1025,7 @@ def test_worker_extracts_predictions_and_matches_enrolled_student(
         {
             "question_id": result["paper"]["answers"][0]["question_id"],
             "question_number": 1,
+            "maximum_score": "100.000",
             "predicted_score": "100.000",
             "confidence": "0.9500",
             "requires_review": False,

@@ -9,6 +9,7 @@ from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
 from app.models import (
     AcademicTerm,
+    Course,
     CourseInstructor,
     CourseOffering,
     Exam,
@@ -31,8 +32,9 @@ router = APIRouter(prefix=settings.api_v1_prefix, tags=["exams"])
 
 def _offering_query(current_user: CurrentUser):
     return (
-        select(CourseOffering, AcademicTerm, CourseInstructor.role)
+        select(CourseOffering, AcademicTerm, CourseInstructor.role, Course)
         .join(AcademicTerm, CourseOffering.academic_term_id == AcademicTerm.id)
+        .join(Course, CourseOffering.course_id == Course.id)
         .join(CourseInstructor, CourseInstructor.course_offering_id == CourseOffering.id)
         .where(
             CourseOffering.institution_id == current_user.institution_id,
@@ -42,7 +44,7 @@ def _offering_query(current_user: CurrentUser):
 
 
 def _offering_response(row) -> CourseOfferingResponse:
-    offering, semester, instructor_role = row
+    offering, semester, instructor_role, course = row
     return CourseOfferingResponse(
         id=offering.id,
         course_id=offering.course_id,
@@ -50,6 +52,10 @@ def _offering_response(row) -> CourseOfferingResponse:
         academic_year_id=semester.academic_year_id,
         program_id=offering.program_id,
         section_code=offering.section_code,
+        course_code=course.code,
+        course_name=course.name,
+        academic_year_label=f"{semester.start_year}–{semester.start_year + 1}",
+        season=semester.season,
         instructor_role=instructor_role,
         created_at=offering.created_at,
     )

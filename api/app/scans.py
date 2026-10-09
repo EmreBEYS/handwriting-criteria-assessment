@@ -81,6 +81,7 @@ def _scan_response(db: DBSession, scan: ScanJob) -> ScanJobResponse:
             PaperAnswerPredictionResponse(
                 question_id=question.id,
                 question_number=question.question_number,
+                maximum_score=question.max_score,
                 predicted_score=answer.predicted_score,
                 confidence=answer.prediction_confidence,
                 requires_review=answer.requires_review,

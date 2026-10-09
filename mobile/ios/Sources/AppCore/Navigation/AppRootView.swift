@@ -33,8 +33,8 @@ private struct AuthenticatedRootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView {
-                path.append(.captureUpload)
+            HomeView(api: session.api) { selection in
+                path.append(.captureUpload(selection))
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -47,16 +47,20 @@ private struct AuthenticatedRootView: View {
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
-                case .captureUpload:
-                    CaptureUploadView {
-                        path.append(.analysis)
+                case let .captureUpload(selection):
+                    CaptureUploadView(api: session.api, selection: selection) { scanID in
+                        path.append(.analysis(scanID: scanID, selection: selection))
                     }
-                case .analysis:
-                    AnalysisView {
-                        path.append(.results)
+                case let .analysis(scanID, selection):
+                    AnalysisView(
+                        api: session.api,
+                        scanID: scanID,
+                        offeringID: selection.offeringID
+                    ) { result in
+                        path.append(.results(result))
                     }
-                case .results:
-                    ResultsView {
+                case let .results(result):
+                    ResultsView(result: result) {
                         path.removeAll()
                     }
                 }

@@ -249,6 +249,10 @@ class CourseOfferingResponse(BaseModel):
     academic_year_id: UUID
     program_id: UUID
     section_code: str
+    course_code: str
+    course_name: str
+    academic_year_label: str
+    season: Literal["fall", "spring"]
     instructor_role: Literal["owner", "grader", "viewer"]
     created_at: datetime
 
@@ -504,6 +508,7 @@ class ScanJobResponse(BaseModel):
 class PaperAnswerPredictionResponse(BaseModel):
     question_id: UUID
     question_number: int
+    maximum_score: Decimal
     predicted_score: Decimal | None
     confidence: Decimal | None
     requires_review: bool

@@ -401,6 +401,10 @@ def create_course_offering(
             academic_year_id=semester.academic_year_id,
             program_id=offering.program_id,
             section_code=offering.section_code,
+            course_code=course.code,
+            course_name=course.name,
+            academic_year_label=f"{semester.start_year}–{semester.start_year + 1}",
+            season=semester.season,
             instructor_role=InstructorRole.owner,
             created_at=offering.created_at,
         )

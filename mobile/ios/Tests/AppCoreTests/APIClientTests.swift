@@ -98,3 +98,41 @@ func authorizedRequestRefreshesOnceAfterUnauthorized() async throws {
     #expect(requests.count == 3)
     #expect(requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer new-access")
 }
+
+@Test
+func uploadBuildsIdempotentMultipartRequest() async throws {
+    let scanID = UUID()
+    let examID = UUID()
+    let response = Data(
+        """
+        {"data":{"id":"\(scanID)","exam_id":"\(examID)","status":"queued",
+        "model_version":null,"error_code":null,"error_message":null,"saved_at":null,
+        "paper":null}}
+        """.utf8
+    )
+    let transport = StubTransport(responses: [(202, response)])
+    let store = InMemoryTokenStore(
+        tokens: TokenPair(accessToken: "access", refreshToken: "refresh", expiresIn: 900)
+    )
+    let client = APIClient(
+        baseURL: URL(string: "https://api.example.test")!,
+        transport: transport,
+        tokenStore: store
+    )
+    let requestID = UUID()
+
+    let scan = try await client.uploadScan(
+        examID: examID,
+        imageData: Data([0xFF, 0xD8, 0xFF]),
+        clientRequestID: requestID
+    )
+
+    #expect(scan.id == scanID)
+    let request = await transport.requests.first
+    #expect(request?.url?.path == "/api/v1/exams/\(examID)/scans")
+    #expect(request?.value(forHTTPHeaderField: "Authorization") == "Bearer access")
+    #expect(request?.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("multipart/form-data") == true)
+    let body = String(decoding: request?.httpBody ?? Data(), as: UTF8.self)
+    #expect(body.contains(requestID.uuidString))
+    #expect(body.contains("filename=\"exam-paper.jpg\""))
+}

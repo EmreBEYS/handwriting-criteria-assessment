@@ -78,6 +78,58 @@ public actor APIClient {
         return envelope.data
     }
 
+    public func roster(courseOfferingID: UUID) async throws -> [RosterStudent] {
+        let envelope: DataEnvelope<[Enrollment]> = try await authorized(
+            path: "/api/v1/course-offerings/\(courseOfferingID)/enrollments"
+        )
+        return envelope.data.filter(\.isActive).map(\.student)
+    }
+
+    public func uploadScan(
+        examID: UUID,
+        imageData: Data,
+        clientRequestID: UUID = UUID()
+    ) async throws -> ScanJob {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        body.appendMultipartField(
+            name: "client_request_id",
+            value: clientRequestID.uuidString,
+            boundary: boundary
+        )
+        body.appendMultipartFile(
+            name: "image",
+            filename: "exam-paper.jpg",
+            mimeType: "image/jpeg",
+            content: imageData,
+            boundary: boundary
+        )
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        let envelope: DataEnvelope<ScanJob> = try await authorized(
+            path: "/api/v1/exams/\(examID)/scans",
+            method: "POST",
+            body: body,
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
+        return envelope.data
+    }
+
+    public func scan(id: UUID) async throws -> ScanJob {
+        let envelope: DataEnvelope<ScanJob> = try await authorized(
+            path: "/api/v1/scans/\(id)"
+        )
+        return envelope.data
+    }
+
+    public func confirmPaper(id: UUID, input: ConfirmationInput) async throws -> ConfirmationResult {
+        let envelope: DataEnvelope<ConfirmationResult> = try await authorized(
+            path: "/api/v1/papers/\(id)/confirm",
+            method: "POST",
+            body: try encoder.encode(input)
+        )
+        return envelope.data
+    }
+
     public func authorized<Value: Decodable & Sendable>(
         path: String,
         method: String = "GET",
@@ -198,5 +250,30 @@ public actor APIClient {
                 message: "İstek tamamlanamadı."
             )
         }
+    }
+}
+
+private extension Data {
+    mutating func appendMultipartField(name: String, value: String, boundary: String) {
+        append("--\(boundary)\r\n".data(using: .utf8)!)
+        append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+        append("\(value)\r\n".data(using: .utf8)!)
+    }
+
+    mutating func appendMultipartFile(
+        name: String,
+        filename: String,
+        mimeType: String,
+        content: Data,
+        boundary: String
+    ) {
+        append("--\(boundary)\r\n".data(using: .utf8)!)
+        append(
+            "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n"
+                .data(using: .utf8)!
+        )
+        append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        append(content)
+        append("\r\n".data(using: .utf8)!)
     }
 }

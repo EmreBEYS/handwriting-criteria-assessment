@@ -1,23 +1,26 @@
 import SwiftUI
 
 struct ResultsView: View {
+    let result: ConfirmationResult
     let onDone: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "chart.bar.doc.horizontal")
+            Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 56))
+                .foregroundStyle(.green)
                 .accessibilityHidden(true)
-            Text("No Results Yet")
+            Text("Okundu ve Kaydedildi")
                 .font(.title2.bold())
-            Text("Result components will be defined after criteria and labels are approved.")
+            Text("\(result.totalScore) / \(result.maximumTotalScore)")
+                .font(.largeTitle.monospacedDigit())
+            Text("Kayıt zamanı: \(result.savedAt)")
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Done", action: onDone)
+            Button("Yeni Kâğıt Okut", action: onDone)
                 .buttonStyle(.borderedProminent)
         }
         .padding()
-        .navigationTitle("Results")
+        .navigationTitle("Sonuç")
         .navigationBarBackButtonHidden()
     }
 }

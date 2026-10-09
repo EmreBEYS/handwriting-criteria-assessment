@@ -74,6 +74,9 @@ metadatasını saklar.
 - **00-14 iOS API & Secure Session Foundation:** Gerçek kurum girişi, Keychain
   token saklama, oturum geri yükleme ve otomatik token yenileme tamamlandı.
   Ayrıntılar: [`docs/sprint-00-14.md`](docs/sprint-00-14.md).
+- **00-15 iOS Scan Queue & Human Review:** Ders/sınav seçimi, kamera veya
+  fotoğraf yükleme, iş durumu takibi, tahmin düzeltme ve kesin sonucu kaydetme
+  akışı tamamlandı. Ayrıntılar: [`docs/sprint-00-15.md`](docs/sprint-00-15.md).
 
 ## Repository Structure
 
