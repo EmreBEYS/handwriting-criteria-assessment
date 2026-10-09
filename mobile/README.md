@@ -9,6 +9,7 @@ akademik bağlam/sınav seçimi, seri kamera çekimi, kalite uyarısı, işlem k
 tahmin doğrulama/düzeltme ve Excel indirmedir. Model ve PostgreSQL'e doğrudan
 bağlanmazlar; tüm erişim backend üzerinden yapılır.
 
-Mevcut iOS paketi Home → Capture/Upload → Analysis → Results navigasyon
-iskeletini içerir. Kamera, fotoğraf kitaplığı, ağ ve model bağlantıları henüz
-aktif değildir. Android uygulaması ayrı ekip çalışması olarak eklenecektir.
+Mevcut iOS paketi gerçek kurum girişi, Keychain tabanlı oturum, token yenileme
+ve ortak API için tip güvenli ağ temelini içerir. Tarama/inceleme ekranları bu
+temelin üzerine bağlanmaktadır. Android uygulaması ayrı ekip çalışması olarak
+eklenecektir.

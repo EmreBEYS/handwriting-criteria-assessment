@@ -71,6 +71,9 @@ metadatasını saklar.
 - **00-13 PÇ Analysis & Excel Export:** Yalnızca onaylı puanlardan soru/PÇ
   analizi, özel nesne deposunda süreli Excel raporu ve yetkili indirme akışı
   tamamlandı. Ayrıntılar: [`docs/sprint-00-13.md`](docs/sprint-00-13.md).
+- **00-14 iOS API & Secure Session Foundation:** Gerçek kurum girişi, Keychain
+  token saklama, oturum geri yükleme ve otomatik token yenileme tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-14.md`](docs/sprint-00-14.md).
 
 ## Repository Structure
 
