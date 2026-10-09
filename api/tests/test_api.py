@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from app.database import Base, database_is_ready, get_db
 from app.main import app
-from app.models import Institution, Program, ProgramOutcome, ScanJob, Student, User
+from app.models import AuditEvent, Institution, Program, ProgramOutcome, ScanJob, Student, User
 from app.processing import _unique_number_match, process_scan
 from app.storage import get_object_storage
 from fastapi.testclient import TestClient
@@ -1050,6 +1050,94 @@ def test_worker_fails_explicitly_without_model_weights(
         failed = session.get(ScanJob, UUID(uploaded["id"]))
         assert failed.status == "failed"
         assert failed.error_code == "MODEL_NOT_CONFIGURED"
+
+
+def test_instructor_confirms_reviewed_paper_atomically(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026001", "first_name": "Grace", "last_name": "Hopper"},
+        headers=headers,
+    ).json()["data"]
+    client.post(
+        f"/api/v1/course-offerings/{exam['course_offering_id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "a27fbaba-8288-45f3-8844-73883f3274e5"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    ).json()["data"]
+    layout = ExamPaperLayout.from_json("ml/configs/inonu-engineering-exam-v1.json")
+    with db_session_factory() as session:
+        process_scan(session, UUID(uploaded["id"]), object_storage, FakeRecognizer(), layout)
+
+    review = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"]
+    paper = review["paper"]
+    question_id = paper["answers"][0]["question_id"]
+    response = client.post(
+        f"/api/v1/papers/{paper['id']}/confirm",
+        json={
+            "student_id": student["id"],
+            "answers": [{"question_id": question_id, "final_score": "95"}],
+            "correction_reason": "Handwriting reviewed",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["status"] == "saved"
+    assert response.json()["data"]["total_score"] == "95.000"
+    saved_scan = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"]
+    assert saved_scan["status"] == "saved"
+    assert saved_scan["paper"]["status"] == "confirmed"
+    with db_session_factory() as session:
+        event = session.scalar(select(AuditEvent))
+        assert event.event_type == "exam_paper.confirmed"
+        assert event.payload["answer_changes"][0]["final_score"] == "95.000"
+
+
+def test_confirmation_validation_does_not_partially_save(
+    client: TestClient, db_session_factory, object_storage: MemoryObjectStorage
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026001", "first_name": "Grace", "last_name": "Hopper"},
+        headers=headers,
+    ).json()["data"]
+    client.post(
+        f"/api/v1/course-offerings/{exam['course_offering_id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "543a35ce-9d8d-45b6-a905-89c7064b820a"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    ).json()["data"]
+    layout = ExamPaperLayout.from_json("ml/configs/inonu-engineering-exam-v1.json")
+    with db_session_factory() as session:
+        process_scan(session, UUID(uploaded["id"]), object_storage, FakeRecognizer(), layout)
+    paper = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"][
+        "paper"
+    ]
+
+    response = client.post(
+        f"/api/v1/papers/{paper['id']}/confirm",
+        json={"student_id": student["id"], "answers": []},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    unchanged = client.get(f"/api/v1/scans/{uploaded['id']}", headers=headers).json()["data"]
+    assert unchanged["status"] == "needs_review"
 
 
 def test_score_parser_rejects_out_of_range_value() -> None:

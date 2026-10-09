@@ -65,6 +65,9 @@ metadatasını saklar.
 - **00-11 Handwriting Inference Worker:** Kuyruktaki görseli alan, OCR
   tahminlerini ders/öğrenci/soru kurallarıyla doğrulayan ve insan incelemesine
   hazırlayan worker tamamlandı. Ayrıntılar: [`docs/sprint-00-11.md`](docs/sprint-00-11.md).
+- **00-12 Human Review & Atomic Confirmation:** Öğrenci ve soru puanı
+  düzeltmeleri, atomik kesinleştirme, mükerrer kâğıt koruması ve denetim kaydı
+  tamamlandı. Ayrıntılar: [`docs/sprint-00-12.md`](docs/sprint-00-12.md).
 
 ## Repository Structure
 

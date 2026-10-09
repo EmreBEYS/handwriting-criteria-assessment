@@ -534,6 +534,46 @@ class ScanJobListEnvelope(BaseModel):
     data: list[ScanJobResponse]
 
 
+class PaperAnswerConfirmation(BaseModel):
+    question_id: UUID
+    final_score: Decimal = Field(ge=0, max_digits=8, decimal_places=3)
+
+
+class ExamPaperConfirmation(BaseModel):
+    student_id: UUID
+    answers: list[PaperAnswerConfirmation] = Field(min_length=1)
+    correction_reason: str | None = Field(default=None, min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def questions_must_be_unique(self) -> "ExamPaperConfirmation":
+        question_ids = [answer.question_id for answer in self.answers]
+        if len(question_ids) != len(set(question_ids)):
+            raise ValueError("Each question can only be confirmed once")
+        return self
+
+
+class ConfirmedAnswerResponse(BaseModel):
+    question_id: UUID
+    question_number: int
+    final_score: Decimal
+    maximum_score: Decimal
+
+
+class ExamPaperConfirmationResponse(BaseModel):
+    paper_id: UUID
+    scan_id: UUID
+    status: Literal["saved"]
+    student_id: UUID
+    total_score: Decimal
+    maximum_total_score: Decimal
+    saved_at: datetime
+    answers: list[ConfirmedAnswerResponse]
+
+
+class ExamPaperConfirmationEnvelope(BaseModel):
+    data: ExamPaperConfirmationResponse
+
+
 class ProbabilityValue(BaseModel):
     label: str
     probability: float = Field(ge=0.0, le=1.0)
