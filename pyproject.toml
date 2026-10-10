@@ -34,6 +34,7 @@ ml = [
 
 [project.scripts]
 train-emnist-digits = "handwriting_ml.train_digits:main"
+evaluate-handwriting = "handwriting_ml.evaluate_manifest:main"
 
 [tool.setuptools.packages.find]
 where = ["api", "ml/src"]

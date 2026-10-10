@@ -130,6 +130,13 @@ public actor APIClient {
         return envelope.data
     }
 
+    public func examAnalysis(examID: UUID) async throws -> ExamAnalysis {
+        let envelope: DataEnvelope<ExamAnalysis> = try await authorized(
+            path: "/api/v1/exams/\(examID)/po-analysis"
+        )
+        return envelope.data
+    }
+
     public func authorized<Value: Decodable & Sendable>(
         path: String,
         method: String = "GET",

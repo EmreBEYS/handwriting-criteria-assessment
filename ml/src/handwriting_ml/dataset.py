@@ -14,10 +14,22 @@ class HandwritingSample:
     field_type: str
     writer_id: str
     split: str
+    device_class: str | None = None
+    capture_condition: str | None = None
 
 
 ALLOWED_FIELD_TYPES = {"name", "student_number", "score"}
 ALLOWED_SPLITS = {"train", "validation", "test"}
+ALLOWED_DEVICE_CLASSES = {"iphone", "android", "scanner", "unknown"}
+ALLOWED_CAPTURE_CONDITIONS = {
+    "controlled",
+    "shadow",
+    "glare",
+    "skew",
+    "blur",
+    "low_light",
+    "unknown",
+}
 
 
 def load_manifest(path: str | Path) -> list[HandwritingSample]:
@@ -36,6 +48,16 @@ def load_manifest(path: str | Path) -> list[HandwritingSample]:
                     field_type=str(record["field_type"]).strip(),
                     writer_id=str(record["writer_id"]).strip(),
                     split=str(record["split"]).strip(),
+                    device_class=(
+                        str(record["device_class"]).strip()
+                        if record.get("device_class") is not None
+                        else None
+                    ),
+                    capture_condition=(
+                        str(record["capture_condition"]).strip()
+                        if record.get("capture_condition") is not None
+                        else None
+                    ),
                 )
             except (KeyError, TypeError, json.JSONDecodeError) as exc:
                 raise DatasetManifestError(
@@ -47,6 +69,18 @@ def load_manifest(path: str | Path) -> list[HandwritingSample]:
                 raise DatasetManifestError(f"Unsupported field type on line {line_number}")
             if sample.split not in ALLOWED_SPLITS:
                 raise DatasetManifestError(f"Unsupported split on line {line_number}")
+            if (
+                sample.device_class is not None
+                and sample.device_class not in ALLOWED_DEVICE_CLASSES
+            ):
+                raise DatasetManifestError(f"Unsupported device class on line {line_number}")
+            if (
+                sample.capture_condition is not None
+                and sample.capture_condition not in ALLOWED_CAPTURE_CONDITIONS
+            ):
+                raise DatasetManifestError(
+                    f"Unsupported capture condition on line {line_number}"
+                )
             if sample.image_path in seen_paths:
                 raise DatasetManifestError(f"Duplicate image path on line {line_number}")
             seen_paths.add(sample.image_path)

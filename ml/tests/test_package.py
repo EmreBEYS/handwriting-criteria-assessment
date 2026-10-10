@@ -113,6 +113,8 @@ def test_dataset_manifest_loads_valid_anonymous_samples(tmp_path) -> None:
                 "field_type": "student_number",
                 "writer_id": "writer-001",
                 "split": "train",
+                "device_class": "iphone",
+                "capture_condition": "shadow",
             }
         ),
         encoding="utf-8",
@@ -120,3 +122,5 @@ def test_dataset_manifest_loads_valid_anonymous_samples(tmp_path) -> None:
 
     samples = load_manifest(manifest)
     assert samples[0].label == "2026001"
+    assert samples[0].device_class == "iphone"
+    assert samples[0].capture_condition == "shadow"

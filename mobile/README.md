@@ -18,3 +18,9 @@ yuvarlatılmış kartlar ve erişilebilir durum göstergelerinden oluşan ortak 
 telefonun erişebildiği backend adresine ayarlanmalıdır. Kamera için uygulama
 target'ına `NSCameraUsageDescription` eklenmelidir. Android uygulaması ayrı ekip
 çalışması olarak eklenecektir.
+
+Onay ekranından sonra istemci sınavın yetkili PÇ analizini yeniden yükler. Ağ
+hatasında PÇ isteği bağımsız olarak tekrar denenebilir; onay isteği tekrarlanmaz.
+Yükleme tekrarlarında aynı `client_request_id` korunarak backend'in mükerrerlik
+koruması kullanılır. Fiziksel cihaz, canlı PostgreSQL ve nesne deposu kontrol
+adımları için [`../docs/sprint-00-16.md`](../docs/sprint-00-16.md) belgesine bakın.

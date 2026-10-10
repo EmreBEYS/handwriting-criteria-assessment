@@ -17,5 +17,5 @@ public struct ExamSelection: Hashable, Sendable {
 public enum AppRoute: Hashable {
     case captureUpload(ExamSelection)
     case analysis(scanID: UUID, selection: ExamSelection)
-    case results(ConfirmationResult)
+    case results(ConfirmationResult, ExamSelection)
 }
