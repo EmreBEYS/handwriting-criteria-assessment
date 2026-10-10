@@ -1,6 +1,6 @@
 # API
 
-iOS ve Android istemcilerinin kullandığı ortak, sürümlü backend burada yer
+iOS istemcisinin kullandığı ortak, sürümlü backend burada yer
 alır. FastAPI uygulaması `api/app` altındadır; PostgreSQL bağlantısı, canlılık
 ve hazır olma kontrolleri, request ID içeren merkezi hata zarfı ve OpenAPI sunar.
 
@@ -23,6 +23,7 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `POST` | `/api/v1/auth/register` | Öğretim elemanı kaydı ve token üretimi |
 | `POST` | `/api/v1/auth/login` | Kurum + e-posta + parola ile giriş |
 | `POST` | `/api/v1/auth/refresh` | Refresh JWT ile yeni token çifti |
+| `POST` | `/api/v1/auth/logout` | Refresh oturumunu iptal etme |
 | `GET` | `/api/v1/users/me` | Bearer access JWT gerektiren profil |
 | `GET/POST` | `/api/v1/academic-years` | Akademik yıl listeleme/oluşturma |
 | `GET/PATCH/DELETE` | `/api/v1/academic-years/{id}` | Akademik yıl CRUD |
@@ -55,4 +56,14 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 OCR/ML işi istek süresi içinde değil `python -m app.worker` ile çalışan worker
 üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
 `MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
-OpenAPI belgesi iki mobil istemci için sözleşmenin kaynağı olacaktır.
+OpenAPI belgesi iOS istemcisi için sözleşmenin kaynağıdır.
+
+Onaylı digit checkpoint'i `HCA_MODEL_PATH` ile verildiğinde worker modeli yükler
+ve öğrenci numarası/puan alanlarında kullanır. Bu model kurs metnini desteklemiyorsa
+iş başarısız olmaz; `COURSE_NOT_MACHINE_VERIFIED` uyarısıyla zorunlu insan
+incelemesine devam eder.
+
+Production yapılandırması HTTPS zorlaması, TLS kullanan nesne deposu, yalnızca
+HTTPS CORS originleri ve güçlü JWT secret olmadan başlamaz. Refresh tokenlar
+`004_refresh_sessions.sql` ile sunucu tarafında izlenir; rotasyon eski tokenı
+geçersiz kılar ve tekrar kullanım reddedilir.

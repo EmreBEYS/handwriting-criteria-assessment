@@ -112,6 +112,21 @@ class User(Base):
     institution: Mapped[Institution] = relationship(back_populates="users")
 
 
+class RefreshSession(Base):
+    __tablename__ = "refresh_sessions"
+
+    jti: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaced_by_jti: Mapped[UUID | None] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class AcademicYear(Base):
     __tablename__ = "academic_years"
     __table_args__ = (UniqueConstraint("institution_id", "start_year"),)

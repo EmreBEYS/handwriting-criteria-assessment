@@ -100,6 +100,27 @@ func authorizedRequestRefreshesOnceAfterUnauthorized() async throws {
 }
 
 @Test
+func logoutRevokesServerSessionAndClearsLocalTokens() async throws {
+    let transport = StubTransport(responses: [(204, Data())])
+    let store = InMemoryTokenStore(
+        tokens: TokenPair(accessToken: "access", refreshToken: "refresh", expiresIn: 900)
+    )
+    let client = APIClient(
+        baseURL: URL(string: "https://api.example.test")!,
+        transport: transport,
+        tokenStore: store
+    )
+
+    try await client.logout()
+
+    #expect(await store.load() == nil)
+    let request = await transport.requests.first
+    #expect(request?.url?.path == "/api/v1/auth/logout")
+    let requestBody = String(decoding: request?.httpBody ?? Data(), as: UTF8.self)
+    #expect(requestBody.contains("refresh"))
+}
+
+@Test
 func uploadBuildsIdempotentMultipartRequest() async throws {
     let scanID = UUID()
     let examID = UUID()

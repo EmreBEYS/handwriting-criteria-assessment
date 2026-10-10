@@ -30,7 +30,7 @@ PÇ hesabı onaylı puanlardan yeniden üretilebilir.
 - Vize, Final ve Bütünleme sınavı tanımı
 - Sınava dinamik sayıda soru ve azami puan ekleme
 - Her soruyu bir veya daha fazla PÇ'ye ağırlıkla bağlama
-- iOS ve Android kameradan seri kâğıt gönderimi
+- iOS kameradan seri kâğıt gönderimi
 - Görüntü kalite kontrolü ve yeniden çekim uyarısı
 - Öğrenci numarası, soru puanları ve model güveninin çıkarılması
 - Kullanıcı doğrulaması/düzeltmesi ve atomik kayıt
@@ -96,7 +96,7 @@ PÇ hesabı onaylı puanlardan yeniden üretilebilir.
 | NFR-003 | Performans | Normal API p95 < 500 ms; OCR asenkron |
 | NFR-004 | Geri bildirim | Yükleme kabulü < 2 sn; iş durumu görünür |
 | NFR-005 | Güvenilirlik | Onay transaction'ı atomik; tekrar istek idempotent |
-| NFR-006 | Taşınabilirlik | Aynı `/api/v1` sözleşmesi iOS ve Android'de kullanılır |
+| NFR-006 | Taşınabilirlik | iOS yalnızca sürümlü `/api/v1` sözleşmesine bağlanır |
 | NFR-007 | İzlenebilirlik | İstek, iş, model sürümü ve değişiklik aktörü izlenebilir |
 | NFR-008 | Yedekleme | Günlük DB yedeği; düzenli geri yükleme testi |
 | NFR-009 | Erişilebilirlik | Sistem mesajları renk dışında metin/ikonla da anlaşılır |

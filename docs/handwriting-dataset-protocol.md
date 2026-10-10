@@ -17,7 +17,7 @@ Each approved crop is represented by one JSON Lines record:
 Allowed `field_type` values are `name`, `student_number` and `score`. Allowed
 splits are `train`, `validation` and `test`.
 
-`device_class` is optional and limited to `iphone`, `android`, `scanner` or
+`device_class` is optional and limited to `iphone`, `scanner` or
 `unknown`. `capture_condition` is optional and limited to `controlled`, `shadow`,
 `glare`, `skew`, `blur`, `low_light` or `unknown`. These fixed categories enable
 aggregate robustness slices without putting device identifiers or free-text notes

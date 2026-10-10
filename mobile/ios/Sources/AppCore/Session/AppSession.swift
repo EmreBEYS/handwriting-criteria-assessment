@@ -14,9 +14,11 @@ public final class AppSession: ObservableObject {
     @Published public private(set) var errorMessage: String?
 
     public let api: APIClient
+    public let pendingScans: any PendingScanStore
 
-    public init(api: APIClient) {
+    public init(api: APIClient, pendingScans: any PendingScanStore = FilePendingScanStore()) {
         self.api = api
+        self.pendingScans = pendingScans
     }
 
     public convenience init() {
@@ -58,6 +60,7 @@ public final class AppSession: ObservableObject {
 
     public func logout() async {
         try? await api.logout()
+        try? await pendingScans.removeAll()
         phase = .signedOut
     }
 }

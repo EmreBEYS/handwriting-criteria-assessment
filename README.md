@@ -10,7 +10,7 @@ sağlayan bitirme projesi.
 - Öğretim elemanı kendi hesabıyla giriş yapar.
 - Akademik yıl, Güz/Bahar dönemi, ders ve Vize/Final/Bütünleme sınavını seçer.
 - Dinamik sayıdaki soruyu ve her sorunun PÇ ilişkisini tanımlar.
-- iOS (Swift) veya Android (Kotlin) istemcisiyle kâğıtları art arda tarar.
+- iOS (Swift) istemcisiyle kâğıtları art arda tarar.
 - Ortak backend görüntüyü işler, öğrenci/soru puanlarını çıkarır ve düşük
   güvenli sonuçları kullanıcı onayına sunar.
 - Onaylı sonuç tek işlemle kaydedilir ve istemciye “okundu ve kaydedildi”
@@ -20,15 +20,14 @@ sağlayan bitirme projesi.
 ## Mimari Özet
 
 ```text
-iOS (Swift) ─┐
-             ├─ HTTPS/JSON ─ API + kimlik doğrulama ─ PostgreSQL
-Android      ─┘                    │
-  (Kotlin)                         ├─ Nesne deposu (sınav görselleri)
-                                   └─ OCR/ML iş kuyruğu
+iOS (Swift) ── HTTPS/JSON ─ API + kimlik doğrulama ─ PostgreSQL
+                                  │
+                                  ├─ Nesne deposu (sınav görselleri)
+                                  └─ OCR/ML iş kuyruğu
 ```
 
-İki mobil istemci aynı sürümlü API sözleşmesini, backend'i, model hattını ve
-PostgreSQL şemasını kullanır. Ham görüntüler veritabanında değil, erişimi
+iOS istemcisi sürümlü API sözleşmesini, backend'i, model hattını ve PostgreSQL
+şemasını kullanır. Ham görüntüler veritabanında değil, erişimi
 kısıtlı nesne deposunda tutulur; veritabanı yalnızca nesne anahtarını ve işlem
 metadatasını saklar.
 
@@ -85,9 +84,24 @@ metadatasını saklar.
   güven eşiği seçme hattı tamamlandı. Onaylı veri/model olmadığı için başarı oranı
   yayımlanmadı. Ayrıntılar: [`docs/sprint-00-17.md`](docs/sprint-00-17.md).
 
-Planlanan yol haritasının kalan sprintleri: **00-18** Android entegrasyonu ve
-platform eşliği, **00-19** sistem/güvenlik/performans testleri, **00-20** final
-sürüm, akademik demo ve dokümantasyon. Bunlar henüz tamamlanmış sayılmaz.
+- **00-18 iOS Production Readiness & Resilient Scan Queue:** Android kapsam dışı
+  bırakılarak iOS'ta korumalı yerel bekleyen tarama, uygulama yeniden açıldığında
+  geri yükleme, aynı kimlikle tekrar deneme ve çıkışta veri temizleme tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-18.md`](docs/sprint-00-18.md).
+
+- **00-19 System Testing, Security & Performance:** HTTPS/üretim güvenlik
+  kapıları, güvenlik başlıkları, görsel imza kontrolü, kuyruk sınırı, tek kullanımlı
+  refresh token rotasyonu, tam sistem testi, CI ve performans smoke aracı tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-19.md`](docs/sprint-00-19.md).
+- **00-20 Final Release, Documentation & Academic Demo:** v1.0.0 sürüm uyumu,
+  yapılandırılmış modelin worker'a bağlanması, container, dağıtım/geri dönüş,
+  güvenlik, akademik değerlendirme, demo ve sürüm kontrol listesi tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-20.md`](docs/sprint-00-20.md).
+
+**Kod yol haritası: 20/20 sprint tamamlandı.** Bu ifade üretim onayı veya OCR
+başarı iddiası değildir. Fiziksel iPhone, onaylı veri/model, staging PostgreSQL,
+özel nesne deposu ve hedef ortam performans kapıları
+[`docs/release-checklist.md`](docs/release-checklist.md) içinde açıkça beklemektedir.
 
 ## Repository Structure
 
@@ -100,7 +114,7 @@ handwriting-criteria-assessment/
 ├── data/                   # Yerel, anonimleştirilmiş ML verisi (Git dışı)
 ├── docs/                   # Gereksinim, mimari, veri ve etik kararları
 ├── ml/                     # OCR/puan çıkarma, eğitim ve değerlendirme
-├── mobile/                 # Swift iOS ve Kotlin Android istemcileri
+├── mobile/                 # Swift iOS istemcisi
 ├── models/                 # Yerel model çıktıları (Git dışı)
 └── tests/                  # Uçtan uca ve sözleşme testleri
 ```
@@ -148,7 +162,7 @@ cd mobile/ios
 swift test
 ```
 
-Before model or dataset implementation, complete and approve:
+Before collecting real data or enabling a model in production, complete and approve:
 
 - `docs/criteria-definition.md`
 - `docs/ethics-and-privacy.md`
@@ -156,6 +170,19 @@ Before model or dataset implementation, complete and approve:
 
 See [Sprint 00-01](docs/sprint-00-01.md) for scope, closure criteria, and the
 questions reserved for the supervisor meeting.
+
+## v1.0 Teslim ve Demo
+
+- Dağıtım: [`docs/deployment.md`](docs/deployment.md)
+- Akademik demo: [`docs/demo-runbook.md`](docs/demo-runbook.md)
+- Değerlendirme planı: [`docs/academic-evaluation.md`](docs/academic-evaluation.md)
+- Sürüm kapıları: [`docs/release-checklist.md`](docs/release-checklist.md)
+- Güvenlik bildirimi: [`SECURITY.md`](SECURITY.md)
+
+Worker yalnızca `HCA_MODEL_PATH` ile gösterilen, Sprint 00-17 protokolüyle
+değerlendirilmiş model dosyasını yükler. Yol boşsa veya dosya okunamıyorsa iş
+`MODEL_NOT_CONFIGURED` ile güvenli biçimde başarısız olur; fallback tahmin veya
+uydurma doğruluk kullanılmaz.
 
 ### Ortam ve PostgreSQL
 
@@ -173,6 +200,10 @@ psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f database/migrations/001_initial_schema.sql
 psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f database/migrations/002_academic_years.sql
+psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f database/migrations/003_exam_paper_predictions.sql
+psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f database/migrations/004_refresh_sessions.sql
 ```
 
 Uygulama geliştirmeden önce açık ürün kararlarını

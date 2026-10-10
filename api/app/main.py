@@ -2,6 +2,7 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.academic import router as academic_router
 from app.auth import router as auth_router
@@ -18,7 +19,7 @@ from app.students import router as students_router
 
 app = FastAPI(
     title="Handwriting Criteria Assessment API",
-    version="0.2.0",
+    version="1.0.0",
     description="Shared API for exam-paper assessment and program-outcome analysis.",
     exception_handlers=exception_handlers,
 )
@@ -47,8 +48,28 @@ async def attach_request_id(request: Request, call_next):
     except ValueError:
         request_id = str(uuid4())
     request.state.request_id = request_id
+    if settings.require_https and request.url.scheme != "https":
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "HTTPS_REQUIRED",
+                    "message": "HTTPS is required.",
+                    "request_id": request_id,
+                }
+            },
+            headers={"X-Request-ID": request_id},
+        )
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 

@@ -1,8 +1,7 @@
 # Mobile Applications
 
 - `ios/`: Swift + SwiftUI istemcisi (kullanıcı tarafından geliştirilecek)
-- `android/`: Kotlin + Jetpack Compose istemcisi (ekip arkadaşı tarafından
-  geliştirilecek)
+- Android istemcisi ürün kapsamı dışındadır; desteklenen mobil istemci iOS'tur.
 
 İki istemci de aynı `/api/v1` OpenAPI sözleşmesini kullanır. Ortak akış; giriş,
 akademik bağlam/sınav seçimi, seri kamera çekimi, kalite uyarısı, işlem kuyruğu,
@@ -16,11 +15,12 @@ yuvarlatılmış kartlar ve erişilebilir durum göstergelerinden oluşan ortak 
 İnönü mobil görsel dili girişten sonuç ekranına kadar uygulanır.
 `HCA_API_BASE_URL` Xcode şemasında
 telefonun erişebildiği backend adresine ayarlanmalıdır. Kamera için uygulama
-target'ına `NSCameraUsageDescription` eklenmelidir. Android uygulaması ayrı ekip
-çalışması olarak eklenecektir.
+target'ına `NSCameraUsageDescription` eklenmelidir.
 
 Onay ekranından sonra istemci sınavın yetkili PÇ analizini yeniden yükler. Ağ
 hatasında PÇ isteği bağımsız olarak tekrar denenebilir; onay isteği tekrarlanmaz.
 Yükleme tekrarlarında aynı `client_request_id` korunarak backend'in mükerrerlik
 koruması kullanılır. Fiziksel cihaz, canlı PostgreSQL ve nesne deposu kontrol
 adımları için [`../docs/sprint-00-16.md`](../docs/sprint-00-16.md) belgesine bakın.
+Başarısız iOS yüklemeleri Data Protection ile korunan, yedekleme dışı yerel
+bekleyen tarama alanında tutulur ve aynı sınav yeniden açıldığında geri yüklenir.
