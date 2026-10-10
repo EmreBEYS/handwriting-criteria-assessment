@@ -6,6 +6,7 @@ from uuid import UUID
 from zipfile import ZipFile
 
 import pytest
+from app.config import settings
 from app.database import Base, database_is_ready, get_db
 from app.main import app
 from app.models import AuditEvent, Institution, Program, ProgramOutcome, ScanJob, Student, User
@@ -18,6 +19,8 @@ from PIL import Image, ImageDraw
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+PNG_SIGNATURE_CONTENT = b"\x89PNG\r\n\x1a\nsynthetic-test-image"
 
 
 @pytest.fixture
@@ -201,6 +204,29 @@ def test_health_reports_model_as_not_ready(client: TestClient) -> None:
     assert response.headers["X-Request-ID"]
 
 
+def test_api_responses_set_security_and_privacy_headers(client: TestClient) -> None:
+    response = client.get("/health/live")
+
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert response.headers["Content-Security-Policy"] == (
+        "default-src 'none'; frame-ancestors 'none'"
+    )
+    assert response.headers["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
+
+
+def test_https_can_be_required_for_deployment(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "require_https", True)
+
+    response = client.get("/health/live")
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "HTTPS_REQUIRED"
+    assert response.json()["error"]["request_id"] == response.headers["X-Request-ID"]
+
+
 def test_readiness_checks_database(client: TestClient) -> None:
     response = client.get("/health/ready")
 
@@ -311,6 +337,13 @@ def test_refresh_token_rotates_token_pair(client: TestClient) -> None:
     assert new_tokens["access_token"] != old_tokens["access_token"]
     assert new_tokens["refresh_token"] != old_tokens["refresh_token"]
 
+    replay = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": old_tokens["refresh_token"]},
+    )
+    assert replay.status_code == 401
+    assert replay.json()["error"]["code"] == "INVALID_TOKEN"
+
 
 def test_refresh_token_cannot_be_used_as_access_token(client: TestClient) -> None:
     registration = client.post("/api/v1/auth/register", json=registration_payload())
@@ -323,6 +356,24 @@ def test_refresh_token_cannot_be_used_as_access_token(client: TestClient) -> Non
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "INVALID_TOKEN_TYPE"
+
+
+def test_logout_revokes_refresh_session(client: TestClient) -> None:
+    registration = client.post("/api/v1/auth/register", json=registration_payload())
+    refresh_token = registration.json()["data"]["tokens"]["refresh_token"]
+
+    logout = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": refresh_token},
+    )
+    replay = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+
+    assert logout.status_code == 204
+    assert replay.status_code == 401
+    assert replay.json()["error"]["code"] == "INVALID_TOKEN"
 
 
 def test_protected_profile_requires_authentication(client: TestClient) -> None:
@@ -906,7 +957,7 @@ def test_active_exam_accepts_idempotent_scan_upload(
     first = client.post(
         f"/api/v1/exams/{exam['id']}/scans",
         data={"client_request_id": request_id},
-        files={"image": ("paper.png", b"png-paper-content", "image/png")},
+        files={"image": ("paper.png", PNG_SIGNATURE_CONTENT, "image/png")},
         headers=headers,
     )
     duplicate = client.post(
@@ -974,11 +1025,131 @@ def test_scan_upload_validates_media_and_storage_availability(
     unavailable = client.post(
         f"/api/v1/exams/{exam['id']}/scans",
         data={"client_request_id": "e599e678-b95f-4e1e-8c98-a860b35e0ebd"},
-        files={"image": ("paper.png", b"png", "image/png")},
+        files={"image": ("paper.png", PNG_SIGNATURE_CONTENT, "image/png")},
         headers=headers,
     )
     assert unavailable.status_code == 503
     assert unavailable.json()["error"]["code"] == "OBJECT_STORAGE_UNAVAILABLE"
+
+
+def test_scan_upload_rejects_spoofed_image_content(
+    client: TestClient, db_session_factory
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+
+    response = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "e599e678-b95f-4e1e-8c98-a860b35e0ebe"},
+        files={"image": ("paper.png", b"not-really-a-png", "image/png")},
+        headers=headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "INVALID_IMAGE_SIGNATURE"
+
+
+def test_scan_queue_limit_fails_closed_but_keeps_idempotent_retry(
+    client: TestClient, db_session_factory, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "max_active_scans_per_user", 1)
+    headers, exam = create_active_exam(client, db_session_factory)
+    request_id = "e599e678-b95f-4e1e-8c98-a860b35e0ebf"
+    first = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": request_id},
+        files={"image": ("paper.png", PNG_SIGNATURE_CONTENT, "image/png")},
+        headers=headers,
+    )
+    retry = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": request_id},
+        files={"image": ("paper.png", PNG_SIGNATURE_CONTENT, "image/png")},
+        headers=headers,
+    )
+    overflow = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "e599e678-b95f-4e1e-8c98-a860b35e0ec0"},
+        files={"image": ("paper.png", PNG_SIGNATURE_CONTENT, "image/png")},
+        headers=headers,
+    )
+
+    assert first.status_code == 202
+    assert retry.status_code == 200
+    assert retry.json()["data"]["id"] == first.json()["data"]["id"]
+    assert overflow.status_code == 429
+    assert overflow.json()["error"]["code"] == "SCAN_QUEUE_LIMIT_REACHED"
+
+
+def test_system_flow_from_scan_to_confirmation_analysis_and_export(
+    client: TestClient,
+    db_session_factory,
+    object_storage: MemoryObjectStorage,
+) -> None:
+    headers, exam = create_active_exam(client, db_session_factory)
+    student = client.post(
+        "/api/v1/students",
+        json={"student_number": "2026099", "first_name": "Test", "last_name": "Student"},
+        headers=headers,
+    ).json()["data"]
+    client.post(
+        f"/api/v1/course-offerings/{exam['course_offering_id']}/enrollments",
+        json={"student_id": student["id"]},
+        headers=headers,
+    )
+    uploaded = client.post(
+        f"/api/v1/exams/{exam['id']}/scans",
+        data={"client_request_id": "e599e678-b95f-4e1e-8c98-a860b35e0ec1"},
+        files={"image": ("paper.png", valid_exam_page(), "image/png")},
+        headers=headers,
+    )
+    assert uploaded.status_code == 202
+
+    class SystemFlowRecognizer(FakeRecognizer):
+        def predict(self, image, field: str) -> OCRPrediction:
+            if field == "student_number":
+                return OCRPrediction("2026099", 0.99)
+            return super().predict(image, field)
+
+    scan_id = uploaded.json()["data"]["id"]
+    layout = ExamPaperLayout.from_json("ml/configs/inonu-engineering-exam-v1.json")
+    with db_session_factory() as session:
+        process_scan(
+            session,
+            UUID(scan_id),
+            object_storage,
+            SystemFlowRecognizer(),
+            layout,
+        )
+
+    review = client.get(f"/api/v1/scans/{scan_id}", headers=headers).json()["data"]
+    paper = review["paper"]
+    confirmation = client.post(
+        f"/api/v1/papers/{paper['id']}/confirm",
+        json={
+            "student_id": student["id"],
+            "answers": [
+                {
+                    "question_id": paper["answers"][0]["question_id"],
+                    "final_score": "90",
+                }
+            ],
+            "correction_reason": "System test correction",
+        },
+        headers=headers,
+    )
+    assert confirmation.status_code == 200
+    assert confirmation.json()["data"]["status"] == "saved"
+
+    analysis = client.get(f"/api/v1/exams/{exam['id']}/po-analysis", headers=headers)
+    assert analysis.status_code == 200
+    assert analysis.json()["data"]["confirmed_paper_count"] == 1
+    assert analysis.json()["data"]["program_outcomes"][0]["success_percentage"] == "90.00"
+
+    export = client.post(f"/api/v1/exams/{exam['id']}/exports", headers=headers)
+    assert export.status_code == 201
+    download = client.get(export.json()["data"]["download_url"], headers=headers)
+    assert download.status_code == 200
+    assert download.content.startswith(b"PK")
 
 
 def test_worker_extracts_predictions_and_matches_enrolled_student(

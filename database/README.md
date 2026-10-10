@@ -13,6 +13,8 @@ psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
   -f database/migrations/002_academic_years.sql
 psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
   -f database/migrations/003_exam_paper_predictions.sql
+psql "postgresql:///exam_assessment" -v ON_ERROR_STOP=1 \
+  -f database/migrations/004_refresh_sessions.sql
 ```
 
 `pgcrypto` ve `citext` eklentilerini oluşturma yetkisi gerekir. Yönetilen
@@ -23,6 +25,7 @@ PostgreSQL servisinde eklentiler önceden etkinleştirilebilir.
 ```bash
 psql "$HCA_DATABASE_URL" -c '\dt'
 psql "$HCA_DATABASE_URL" -c '\d+ exam_papers'
+psql "$HCA_DATABASE_URL" -c '\d+ refresh_sessions'
 ```
 
 Production bağlantı bilgileri `.env` veya secret manager üzerinden verilir;

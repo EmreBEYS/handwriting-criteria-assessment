@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     log_level: str = "info"
     api_v1_prefix: str = "/api/v1"
     max_upload_bytes: int = 10 * 1024 * 1024
+    max_active_scans_per_user: int = Field(default=25, ge=1, le=1000)
+    require_https: bool = False
 
     database_url: str = "postgresql://exam_app:change_me@localhost:5432/exam_assessment"
     database_pool_size: int = Field(default=10, ge=1)
@@ -64,10 +66,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def reject_insecure_production_secret(self) -> "Settings":
-        if self.app_env == "production" and (
-            len(self.jwt_secret_key) < 32 or "change" in self.jwt_secret_key.lower()
-        ):
-            raise ValueError("HCA_JWT_SECRET_KEY must be a strong production secret")
+        if self.app_env == "production":
+            if len(self.jwt_secret_key) < 32 or "change" in self.jwt_secret_key.lower():
+                raise ValueError("HCA_JWT_SECRET_KEY must be a strong production secret")
+            if not self.require_https:
+                raise ValueError("HCA_REQUIRE_HTTPS must be true in production")
+            if not self.object_storage_use_ssl:
+                raise ValueError("HCA_OBJECT_STORAGE_USE_SSL must be true in production")
+            if any(not origin.startswith("https://") for origin in self.cors_origins):
+                raise ValueError("HCA_CORS_ALLOWED_ORIGINS must use HTTPS in production")
         return self
 
 

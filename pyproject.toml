@@ -41,7 +41,7 @@ where = ["api", "ml/src"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
-pythonpath = ["api", "ml/src"]
+pythonpath = [".", "api", "ml/src"]
 testpaths = ["api/tests", "ml/tests", "tests"]
 
 [tool.ruff]

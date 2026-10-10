@@ -20,8 +20,14 @@ def verify_password(password: str, encoded_hash: str) -> bool:
     return password_hash.verify(password, encoded_hash)
 
 
-def create_token(user: User, token_type: Literal["access", "refresh"]) -> str:
-    now = datetime.now(UTC)
+def create_token(
+    user: User,
+    token_type: Literal["access", "refresh"],
+    *,
+    now: datetime | None = None,
+    jti: UUID | None = None,
+) -> str:
+    now = now or datetime.now(UTC)
     lifetime = (
         timedelta(minutes=settings.access_token_expire_minutes)
         if token_type == "access"
@@ -32,7 +38,7 @@ def create_token(user: User, token_type: Literal["access", "refresh"]) -> str:
         "institution_id": str(user.institution_id),
         "role": user.role.value,
         "type": token_type,
-        "jti": str(uuid4()),
+        "jti": str(jti or uuid4()),
         "iat": now,
         "exp": now + lifetime,
         "iss": settings.jwt_issuer,
@@ -41,8 +47,16 @@ def create_token(user: User, token_type: Literal["access", "refresh"]) -> str:
     return jwt.encode(claims, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
-def create_token_pair(user: User) -> tuple[str, str]:
-    return create_token(user, "access"), create_token(user, "refresh")
+def create_token_pair(user: User) -> tuple[str, str, UUID, datetime]:
+    now = datetime.now(UTC)
+    refresh_jti = uuid4()
+    refresh_expires_at = now + timedelta(days=settings.refresh_token_expire_days)
+    return (
+        create_token(user, "access", now=now),
+        create_token(user, "refresh", now=now, jti=refresh_jti),
+        refresh_jti,
+        refresh_expires_at,
+    )
 
 
 def decode_token(token: str, expected_type: Literal["access", "refresh"]) -> dict[str, Any]:

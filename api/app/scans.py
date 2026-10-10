@@ -3,14 +3,23 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
 from app.exams import _get_exam
-from app.models import Exam, ExamPaper, ExamQuestion, ExamStatus, PaperAnswer, ScanJob, Student
+from app.models import (
+    Exam,
+    ExamPaper,
+    ExamQuestion,
+    ExamStatus,
+    PaperAnswer,
+    ScanJob,
+    ScanStatus,
+    Student,
+)
 from app.schemas import (
     ExamPaperPredictionResponse,
     PaperAnswerPredictionResponse,
@@ -29,6 +38,20 @@ ALLOWED_IMAGE_TYPES = {
     "image/jpeg": "jpg",
     "image/png": "png",
 }
+
+
+def _has_valid_image_signature(content: bytes, content_type: str) -> bool:
+    if content_type == "image/png":
+        return content.startswith(b"\x89PNG\r\n\x1a\n")
+    if content_type == "image/jpeg":
+        return content.startswith(b"\xff\xd8\xff")
+    if content_type in {"image/heic", "image/heif"}:
+        return (
+            len(content) >= 12
+            and content[4:8] == b"ftyp"
+            and content[8:12] in {b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"}
+        )
+    return False
 
 
 def _get_scan(db: DBSession, current_user: CurrentUser, scan_id: UUID) -> ScanJob:
@@ -126,6 +149,19 @@ async def create_scan(
     if exam.status != ExamStatus.active:
         raise APIError(409, "EXAM_NOT_ACTIVE", "Scans can only be added to an active exam.")
 
+    active_scan_count = db.scalar(
+        select(func.count(ScanJob.id)).where(
+            ScanJob.requested_by == current_user.id,
+            ScanJob.status.in_([ScanStatus.queued, ScanStatus.processing]),
+        )
+    )
+    if (active_scan_count or 0) >= settings.max_active_scans_per_user:
+        raise APIError(
+            429,
+            "SCAN_QUEUE_LIMIT_REACHED",
+            "Too many scans are already queued or processing.",
+        )
+
     content_type = (image.content_type or "").lower()
     extension = ALLOWED_IMAGE_TYPES.get(content_type)
     if extension is None:
@@ -135,6 +171,12 @@ async def create_scan(
         raise APIError(400, "EMPTY_UPLOAD", "Uploaded image is empty.")
     if len(content) > settings.max_upload_bytes:
         raise APIError(413, "UPLOAD_TOO_LARGE", "Uploaded image exceeds the configured limit.")
+    if not _has_valid_image_signature(content, content_type):
+        raise APIError(
+            400,
+            "INVALID_IMAGE_SIGNATURE",
+            "Upload content does not match its media type.",
+        )
 
     job_id = uuid4()
     object_key = f"{current_user.institution_id}/{exam.id}/{job_id}.{extension}"

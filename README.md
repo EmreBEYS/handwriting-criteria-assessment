@@ -89,9 +89,13 @@ metadatasını saklar.
   geri yükleme, aynı kimlikle tekrar deneme ve çıkışta veri temizleme tamamlandı.
   Ayrıntılar: [`docs/sprint-00-18.md`](docs/sprint-00-18.md).
 
-Planlanan yol haritasının kalan sprintleri: **00-19** sistem/güvenlik/performans
-testleri ve **00-20** final sürüm, akademik demo ve dokümantasyon. Bunlar henüz
-tamamlanmış sayılmaz.
+- **00-19 System Testing, Security & Performance:** HTTPS/üretim güvenlik
+  kapıları, güvenlik başlıkları, görsel imza kontrolü, kuyruk sınırı, tek kullanımlı
+  refresh token rotasyonu, tam sistem testi, CI ve performans smoke aracı tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-19.md`](docs/sprint-00-19.md).
+
+Planlanan yol haritasının son sprinti **00-20** final sürüm, akademik demo ve
+dokümantasyondur; henüz tamamlanmış sayılmaz.
 
 ## Repository Structure
 
@@ -177,6 +181,10 @@ psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f database/migrations/001_initial_schema.sql
 psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f database/migrations/002_academic_years.sql
+psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f database/migrations/003_exam_paper_predictions.sql
+psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f database/migrations/004_refresh_sessions.sql
 ```
 
 Uygulama geliştirmeden önce açık ürün kararlarını

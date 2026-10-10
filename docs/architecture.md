@@ -43,6 +43,8 @@ flowchart LR
 - Önerilen başlangıç: Python 3.11+, FastAPI, SQLAlchemy/Alembic ve Pydantic.
 - Kimlik doğrulama kısa ömürlü erişim belirteci + yenileme belirteciyle yapılır;
   parola özeti Argon2id veya bcrypt olmalıdır.
+- Yenileme belirteci kimliği veritabanında tutulur; rotasyonda önceki oturum
+  iptal edilir ve logout sunucu tarafındaki oturumu da sonlandırır.
 - Her sorgu authenticated kullanıcının kurum/ders yetkisini kontrol eder.
 - Uzun süren OCR işlemi HTTP isteği içinde çalışmaz; iş kuyruğuna verilir.
 - API tabanı `/api/v1`; hata yanıtları sabit hata kodu ve correlation ID taşır.

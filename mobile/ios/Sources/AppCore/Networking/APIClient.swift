@@ -61,6 +61,21 @@ public actor APIClient {
     }
 
     public func logout() async throws {
+        guard let tokens = try await tokenStore.load() else { return }
+        do {
+            let body = try encoder.encode(["refresh_token": tokens.refreshToken])
+            let (data, response) = try await rawRequest(
+                path: "/api/v1/auth/logout",
+                method: "POST",
+                body: body,
+                contentType: "application/json",
+                accessToken: nil
+            )
+            try validate(data: data, response: response)
+        } catch {
+            try await tokenStore.clear()
+            throw error
+        }
         try await tokenStore.clear()
     }
 

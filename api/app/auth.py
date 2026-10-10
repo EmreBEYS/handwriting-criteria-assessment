@@ -1,14 +1,14 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.dependencies import CurrentUser, DBSession
 from app.errors import APIError
-from app.models import Institution, User, UserRole
+from app.models import Institution, RefreshSession, User, UserRole
 from app.schemas import (
     AuthData,
     AuthResponse,
@@ -25,9 +25,15 @@ router = APIRouter(prefix=settings.api_v1_prefix, tags=["authentication"])
 _dummy_password_hash = hash_password("not-a-real-password-for-timing-only")
 
 
-def _auth_response(user: User) -> AuthResponse:
-    access_token, refresh_token = create_token_pair(user)
-    return AuthResponse(
+def _auth_response(db: DBSession, user: User) -> tuple[AuthResponse, RefreshSession]:
+    access_token, refresh_token, refresh_jti, refresh_expires_at = create_token_pair(user)
+    refresh_session = RefreshSession(
+        jti=refresh_jti,
+        user_id=user.id,
+        expires_at=refresh_expires_at,
+    )
+    db.add(refresh_session)
+    response = AuthResponse(
         data=AuthData(
             user=UserResponse.model_validate(user),
             tokens=TokenPair(
@@ -37,6 +43,7 @@ def _auth_response(user: User) -> AuthResponse:
             ),
         )
     )
+    return response, refresh_session
 
 
 @router.post(
@@ -73,12 +80,13 @@ def register(payload: RegisterRequest, db: DBSession) -> AuthResponse:
     )
     db.add(user)
     try:
+        db.flush()
+        response, _ = _auth_response(db, user)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise APIError(409, "EMAIL_ALREADY_REGISTERED", "Email is already registered.") from exc
-    db.refresh(user)
-    return _auth_response(user)
+    return response
 
 
 @router.post("/auth/login", response_model=AuthResponse)
@@ -100,21 +108,53 @@ def login(payload: LoginRequest, db: DBSession) -> AuthResponse:
         raise APIError(401, "INVALID_CREDENTIALS", "Email, password, or institution is invalid.")
 
     user.last_login_at = datetime.now(UTC)
+    response, _ = _auth_response(db, user)
     db.commit()
-    return _auth_response(user)
+    return response
 
 
 @router.post("/auth/refresh", response_model=AuthResponse)
 def refresh(payload: RefreshRequest, db: DBSession) -> AuthResponse:
     claims = decode_token(payload.refresh_token, "refresh")
+    refresh_jti = UUID(claims["jti"])
+    refresh_session = db.scalar(
+        select(RefreshSession).where(RefreshSession.jti == refresh_jti).with_for_update()
+    )
     user = db.scalar(select(User).where(User.id == UUID(claims["sub"])))
+    now = datetime.now(UTC)
+    expires_at = refresh_session.expires_at if refresh_session is not None else None
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
     if (
         user is None
         or not user.is_active
         or str(user.institution_id) != claims["institution_id"]
+        or refresh_session is None
+        or refresh_session.user_id != user.id
+        or refresh_session.revoked_at is not None
+        or expires_at is None
+        or expires_at <= now
     ):
         raise APIError(401, "INVALID_TOKEN", "Authentication token is invalid or expired.")
-    return _auth_response(user)
+    response, replacement = _auth_response(db, user)
+    refresh_session.revoked_at = now
+    refresh_session.replaced_by_jti = replacement.jti
+    db.commit()
+    return response
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(payload: RefreshRequest, db: DBSession) -> Response:
+    claims = decode_token(payload.refresh_token, "refresh")
+    refresh_session = db.scalar(
+        select(RefreshSession)
+        .where(RefreshSession.jti == UUID(claims["jti"]))
+        .with_for_update()
+    )
+    if refresh_session is not None and refresh_session.revoked_at is None:
+        refresh_session.revoked_at = datetime.now(UTC)
+        db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/users/me", response_model=UserEnvelope, tags=["users"])

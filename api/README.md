@@ -23,6 +23,7 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 | `POST` | `/api/v1/auth/register` | Öğretim elemanı kaydı ve token üretimi |
 | `POST` | `/api/v1/auth/login` | Kurum + e-posta + parola ile giriş |
 | `POST` | `/api/v1/auth/refresh` | Refresh JWT ile yeni token çifti |
+| `POST` | `/api/v1/auth/logout` | Refresh oturumunu iptal etme |
 | `GET` | `/api/v1/users/me` | Bearer access JWT gerektiren profil |
 | `GET/POST` | `/api/v1/academic-years` | Akademik yıl listeleme/oluşturma |
 | `GET/PATCH/DELETE` | `/api/v1/academic-years/{id}` | Akademik yıl CRUD |
@@ -56,3 +57,8 @@ OCR/ML işi istek süresi içinde değil `python -m app.worker` ile çalışan w
 üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
 `MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
 OpenAPI belgesi iOS istemcisi için sözleşmenin kaynağıdır.
+
+Production yapılandırması HTTPS zorlaması, TLS kullanan nesne deposu, yalnızca
+HTTPS CORS originleri ve güçlü JWT secret olmadan başlamaz. Refresh tokenlar
+`004_refresh_sessions.sql` ile sunucu tarafında izlenir; rotasyon eski tokenı
+geçersiz kılar ve tekrar kullanım reddedilir.
