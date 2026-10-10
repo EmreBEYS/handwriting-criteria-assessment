@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.build
+data
+models
+ml/runs
+.env
+*.pt
+*.pth

@@ -147,16 +147,22 @@ def process_scan(
             extraction.regions["student_number"], "student_number"
         )
         matched_student = _match_student(db, offering.id, number_prediction.text)
-        course_prediction = recognizer.predict(extraction.regions["course"], "course")
+        try:
+            course_prediction = recognizer.predict(extraction.regions["course"], "course")
+        except ValueError:
+            course_prediction = None
 
         threshold = settings.review_confidence_threshold
-        expected_course = _normalized(f"{course.code} {course.name}")
-        course_match = SequenceMatcher(
-            None, expected_course, _normalized(course_prediction.text)
-        ).ratio()
         review_reasons = list(extraction.warnings)
-        if course_prediction.confidence < threshold or course_match < 0.75:
-            review_reasons.append("COURSE_MISMATCH")
+        if course_prediction is None:
+            review_reasons.append("COURSE_NOT_MACHINE_VERIFIED")
+        else:
+            expected_course = _normalized(f"{course.code} {course.name}")
+            course_match = SequenceMatcher(
+                None, expected_course, _normalized(course_prediction.text)
+            ).ratio()
+            if course_prediction.confidence < threshold or course_match < 0.75:
+                review_reasons.append("COURSE_MISMATCH")
         if number_prediction.confidence < threshold:
             review_reasons.append("LOW_STUDENT_NUMBER_CONFIDENCE")
         if matched_student is None:
@@ -189,8 +195,14 @@ def process_scan(
             student_number_confidence=_confidence(number_prediction.confidence),
             predicted_student_name=None,
             student_name_confidence=None,
-            predicted_course_text=course_prediction.text.strip() or None,
-            course_confidence=_confidence(course_prediction.confidence),
+            predicted_course_text=(
+                course_prediction.text.strip() or None if course_prediction is not None else None
+            ),
+            course_confidence=(
+                _confidence(course_prediction.confidence)
+                if course_prediction is not None
+                else None
+            ),
             review_reasons=review_reasons,
             status=PaperStatus.needs_review,
         )
@@ -255,9 +267,23 @@ def process_next_scan(
     )
     if scan_id is None:
         return None
-    selected_recognizer = recognizer or UnavailableRecognizer(settings.model_version)
+    selected_recognizer = recognizer or _configured_recognizer()
     selected_layout_path = Path(layout_path or settings.exam_layout_path)
     if not selected_layout_path.is_absolute():
         selected_layout_path = Path(__file__).resolve().parents[2] / selected_layout_path
     selected_layout = ExamPaperLayout.from_json(selected_layout_path)
     return process_scan(db, scan_id, storage, selected_recognizer, selected_layout)
+
+
+def _configured_recognizer() -> HandwritingRecognizer:
+    if not settings.model_path:
+        return UnavailableRecognizer(settings.model_version)
+    model_path = Path(settings.model_path)
+    if not model_path.is_absolute():
+        model_path = Path(__file__).resolve().parents[2] / model_path
+    try:
+        from handwriting_ml.digit_model import TorchDigitRecognizer
+
+        return TorchDigitRecognizer.load(model_path)
+    except Exception:
+        return UnavailableRecognizer(settings.model_version)

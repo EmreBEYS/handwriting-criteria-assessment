@@ -93,9 +93,15 @@ metadatasını saklar.
   kapıları, güvenlik başlıkları, görsel imza kontrolü, kuyruk sınırı, tek kullanımlı
   refresh token rotasyonu, tam sistem testi, CI ve performans smoke aracı tamamlandı.
   Ayrıntılar: [`docs/sprint-00-19.md`](docs/sprint-00-19.md).
+- **00-20 Final Release, Documentation & Academic Demo:** v1.0.0 sürüm uyumu,
+  yapılandırılmış modelin worker'a bağlanması, container, dağıtım/geri dönüş,
+  güvenlik, akademik değerlendirme, demo ve sürüm kontrol listesi tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-20.md`](docs/sprint-00-20.md).
 
-Planlanan yol haritasının son sprinti **00-20** final sürüm, akademik demo ve
-dokümantasyondur; henüz tamamlanmış sayılmaz.
+**Kod yol haritası: 20/20 sprint tamamlandı.** Bu ifade üretim onayı veya OCR
+başarı iddiası değildir. Fiziksel iPhone, onaylı veri/model, staging PostgreSQL,
+özel nesne deposu ve hedef ortam performans kapıları
+[`docs/release-checklist.md`](docs/release-checklist.md) içinde açıkça beklemektedir.
 
 ## Repository Structure
 
@@ -156,7 +162,7 @@ cd mobile/ios
 swift test
 ```
 
-Before model or dataset implementation, complete and approve:
+Before collecting real data or enabling a model in production, complete and approve:
 
 - `docs/criteria-definition.md`
 - `docs/ethics-and-privacy.md`
@@ -164,6 +170,19 @@ Before model or dataset implementation, complete and approve:
 
 See [Sprint 00-01](docs/sprint-00-01.md) for scope, closure criteria, and the
 questions reserved for the supervisor meeting.
+
+## v1.0 Teslim ve Demo
+
+- Dağıtım: [`docs/deployment.md`](docs/deployment.md)
+- Akademik demo: [`docs/demo-runbook.md`](docs/demo-runbook.md)
+- Değerlendirme planı: [`docs/academic-evaluation.md`](docs/academic-evaluation.md)
+- Sürüm kapıları: [`docs/release-checklist.md`](docs/release-checklist.md)
+- Güvenlik bildirimi: [`SECURITY.md`](SECURITY.md)
+
+Worker yalnızca `HCA_MODEL_PATH` ile gösterilen, Sprint 00-17 protokolüyle
+değerlendirilmiş model dosyasını yükler. Yol boşsa veya dosya okunamıyorsa iş
+`MODEL_NOT_CONFIGURED` ile güvenli biçimde başarısız olur; fallback tahmin veya
+uydurma doğruluk kullanılmaz.
 
 ### Ortam ve PostgreSQL
 

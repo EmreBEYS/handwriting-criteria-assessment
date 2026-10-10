@@ -58,6 +58,11 @@ OCR/ML işi istek süresi içinde değil `python -m app.worker` ile çalışan w
 `MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
 OpenAPI belgesi iOS istemcisi için sözleşmenin kaynağıdır.
 
+Onaylı digit checkpoint'i `HCA_MODEL_PATH` ile verildiğinde worker modeli yükler
+ve öğrenci numarası/puan alanlarında kullanır. Bu model kurs metnini desteklemiyorsa
+iş başarısız olmaz; `COURSE_NOT_MACHINE_VERIFIED` uyarısıyla zorunlu insan
+incelemesine devam eder.
+
 Production yapılandırması HTTPS zorlaması, TLS kullanan nesne deposu, yalnızca
 HTTPS CORS originleri ve güçlü JWT secret olmadan başlamaz. Refresh tokenlar
 `004_refresh_sessions.sql` ile sunucu tarafında izlenir; rotasyon eski tokenı

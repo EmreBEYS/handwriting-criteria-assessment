@@ -3,6 +3,8 @@ from PIL import Image, ImageDraw
 
 torch = pytest.importorskip("torch")
 
+from app.config import settings  # noqa: E402
+from app.processing import _configured_recognizer  # noqa: E402
 from handwriting_ml.digit_model import (  # noqa: E402
     DigitCNN,
     NumberToken,
@@ -40,6 +42,22 @@ def test_checkpoint_round_trip(tmp_path) -> None:
     recognizer = TorchDigitRecognizer.load(checkpoint)
 
     assert recognizer.model_version == "test-digits"
+
+
+def test_worker_loads_configured_digit_checkpoint(tmp_path, monkeypatch) -> None:
+    checkpoint = tmp_path / "digits.pt"
+    torch.save(
+        {
+            "model_state": DigitCNN().state_dict(),
+            "model_version": "approved-test-digits",
+        },
+        checkpoint,
+    )
+    monkeypatch.setattr(settings, "model_path", str(checkpoint))
+
+    recognizer = _configured_recognizer()
+
+    assert recognizer.model_version == "approved-test-digits"
 
 
 def test_segment_number_ignores_cell_border_and_keeps_decimal() -> None:

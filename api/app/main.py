@@ -19,7 +19,7 @@ from app.students import router as students_router
 
 app = FastAPI(
     title="Handwriting Criteria Assessment API",
-    version="0.2.0",
+    version="1.0.0",
     description="Shared API for exam-paper assessment and program-outcome analysis.",
     exception_handlers=exception_handlers,
 )
