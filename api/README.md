@@ -1,6 +1,6 @@
 # API
 
-iOS ve Android istemcilerinin kullandığı ortak, sürümlü backend burada yer
+iOS istemcisinin kullandığı ortak, sürümlü backend burada yer
 alır. FastAPI uygulaması `api/app` altındadır; PostgreSQL bağlantısı, canlılık
 ve hazır olma kontrolleri, request ID içeren merkezi hata zarfı ve OpenAPI sunar.
 
@@ -55,4 +55,4 @@ ve verileri oturum açan kullanıcının kurumuyla sınırlar.
 OCR/ML işi istek süresi içinde değil `python -m app.worker` ile çalışan worker
 üzerinden yürütülür. Eğitilmiş model paketi ayarlanmamışsa iş
 `MODEL_NOT_CONFIGURED` ile açıkça başarısız olur. Uygulama başladığında üretilen
-OpenAPI belgesi iki mobil istemci için sözleşmenin kaynağı olacaktır.
+OpenAPI belgesi iOS istemcisi için sözleşmenin kaynağıdır.

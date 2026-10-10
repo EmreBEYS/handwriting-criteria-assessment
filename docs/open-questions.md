@@ -30,5 +30,5 @@ resolved and recorded.
 
 ## Team boundary
 
-- Confirm the interface shared with the Android teammate and who owns contract
-  changes, integration testing, and release coordination.
+- Android is outside the agreed product scope. Contract changes, integration
+  testing and release coordination apply to the iOS client and shared backend.

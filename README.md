@@ -10,7 +10,7 @@ sağlayan bitirme projesi.
 - Öğretim elemanı kendi hesabıyla giriş yapar.
 - Akademik yıl, Güz/Bahar dönemi, ders ve Vize/Final/Bütünleme sınavını seçer.
 - Dinamik sayıdaki soruyu ve her sorunun PÇ ilişkisini tanımlar.
-- iOS (Swift) veya Android (Kotlin) istemcisiyle kâğıtları art arda tarar.
+- iOS (Swift) istemcisiyle kâğıtları art arda tarar.
 - Ortak backend görüntüyü işler, öğrenci/soru puanlarını çıkarır ve düşük
   güvenli sonuçları kullanıcı onayına sunar.
 - Onaylı sonuç tek işlemle kaydedilir ve istemciye “okundu ve kaydedildi”
@@ -20,15 +20,14 @@ sağlayan bitirme projesi.
 ## Mimari Özet
 
 ```text
-iOS (Swift) ─┐
-             ├─ HTTPS/JSON ─ API + kimlik doğrulama ─ PostgreSQL
-Android      ─┘                    │
-  (Kotlin)                         ├─ Nesne deposu (sınav görselleri)
-                                   └─ OCR/ML iş kuyruğu
+iOS (Swift) ── HTTPS/JSON ─ API + kimlik doğrulama ─ PostgreSQL
+                                  │
+                                  ├─ Nesne deposu (sınav görselleri)
+                                  └─ OCR/ML iş kuyruğu
 ```
 
-İki mobil istemci aynı sürümlü API sözleşmesini, backend'i, model hattını ve
-PostgreSQL şemasını kullanır. Ham görüntüler veritabanında değil, erişimi
+iOS istemcisi sürümlü API sözleşmesini, backend'i, model hattını ve PostgreSQL
+şemasını kullanır. Ham görüntüler veritabanında değil, erişimi
 kısıtlı nesne deposunda tutulur; veritabanı yalnızca nesne anahtarını ve işlem
 metadatasını saklar.
 
@@ -85,9 +84,14 @@ metadatasını saklar.
   güven eşiği seçme hattı tamamlandı. Onaylı veri/model olmadığı için başarı oranı
   yayımlanmadı. Ayrıntılar: [`docs/sprint-00-17.md`](docs/sprint-00-17.md).
 
-Planlanan yol haritasının kalan sprintleri: **00-18** Android entegrasyonu ve
-platform eşliği, **00-19** sistem/güvenlik/performans testleri, **00-20** final
-sürüm, akademik demo ve dokümantasyon. Bunlar henüz tamamlanmış sayılmaz.
+- **00-18 iOS Production Readiness & Resilient Scan Queue:** Android kapsam dışı
+  bırakılarak iOS'ta korumalı yerel bekleyen tarama, uygulama yeniden açıldığında
+  geri yükleme, aynı kimlikle tekrar deneme ve çıkışta veri temizleme tamamlandı.
+  Ayrıntılar: [`docs/sprint-00-18.md`](docs/sprint-00-18.md).
+
+Planlanan yol haritasının kalan sprintleri: **00-19** sistem/güvenlik/performans
+testleri ve **00-20** final sürüm, akademik demo ve dokümantasyon. Bunlar henüz
+tamamlanmış sayılmaz.
 
 ## Repository Structure
 
@@ -100,7 +104,7 @@ handwriting-criteria-assessment/
 ├── data/                   # Yerel, anonimleştirilmiş ML verisi (Git dışı)
 ├── docs/                   # Gereksinim, mimari, veri ve etik kararları
 ├── ml/                     # OCR/puan çıkarma, eğitim ve değerlendirme
-├── mobile/                 # Swift iOS ve Kotlin Android istemcileri
+├── mobile/                 # Swift iOS istemcisi
 ├── models/                 # Yerel model çıktıları (Git dışı)
 └── tests/                  # Uçtan uca ve sözleşme testleri
 ```

@@ -55,7 +55,11 @@ private struct AuthenticatedRootView: View {
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case let .captureUpload(selection):
-                    CaptureUploadView(api: session.api, selection: selection) { scanID in
+                    CaptureUploadView(
+                        api: session.api,
+                        pendingScans: session.pendingScans,
+                        selection: selection
+                    ) { scanID in
                         path.append(.analysis(scanID: scanID, selection: selection))
                     }
                 case let .analysis(scanID, selection):

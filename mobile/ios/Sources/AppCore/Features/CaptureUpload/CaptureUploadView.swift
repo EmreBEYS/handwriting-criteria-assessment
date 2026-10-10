@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct CaptureUploadView: View {
     let api: APIClient
+    let pendingScans: any PendingScanStore
     let selection: ExamSelection
     let onUploaded: (UUID) -> Void
 
@@ -13,6 +14,7 @@ struct CaptureUploadView: View {
     @State private var clientRequestID = UUID()
     @State private var isUploading = false
     @State private var errorMessage: String?
+    @State private var pendingMessage: String?
 #if os(iOS)
     @State private var showsCamera = false
 #endif
@@ -98,6 +100,12 @@ struct CaptureUploadView: View {
                                 .foregroundStyle(InonuTheme.danger)
                         }
                     }
+                    if let pendingMessage {
+                        AppCard {
+                            Label(pendingMessage, systemImage: "arrow.clockwise.icloud.fill")
+                                .foregroundStyle(InonuTheme.sky)
+                        }
+                    }
                     Button {
                         Task { await upload() }
                     } label: {
@@ -117,13 +125,16 @@ struct CaptureUploadView: View {
         .navigationTitle("Kâğıt Yükle")
         .inonuNavigationChrome()
         .preferredColorScheme(.dark)
+        .task { await restorePendingScan() }
         .onChange(of: selectedPhoto) { item in
             guard let item else { return }
             Task { await loadPhoto(item) }
         }
 #if os(iOS)
         .sheet(isPresented: $showsCamera) {
-            CameraPicker { data in imageData = data }
+            CameraPicker { data in
+                Task { await replaceImage(with: data) }
+            }
         }
 #endif
     }
@@ -135,7 +146,7 @@ struct CaptureUploadView: View {
             else {
                 throw APIClientError.transport("Seçilen görsel okunamadı.")
             }
-            imageData = jpeg
+            await replaceImage(with: jpeg)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -147,15 +158,42 @@ struct CaptureUploadView: View {
         isUploading = true
         defer { isUploading = false }
         do {
+            try await pendingScans.save(
+                PendingScan(
+                    requestID: clientRequestID,
+                    examID: selection.examID,
+                    imageData: imageData
+                )
+            )
             let scan = try await api.uploadScan(
                 examID: selection.examID,
                 imageData: imageData,
                 clientRequestID: clientRequestID
             )
+            try await pendingScans.remove(requestID: clientRequestID)
             onUploaded(scan.id)
         } catch {
             errorMessage = error.localizedDescription
+            pendingMessage = "Tarama cihazda korumalı olarak bekletildi. Aynı istekle tekrar deneyin."
         }
+    }
+
+    private func restorePendingScan() async {
+        do {
+            guard let pending = try await pendingScans.load(examID: selection.examID) else { return }
+            clientRequestID = pending.requestID
+            imageData = pending.imageData
+            pendingMessage = "Bekleyen tarama geri yüklendi; güvenli biçimde yeniden gönderebilirsiniz."
+        } catch {
+            errorMessage = "Bekleyen tarama geri yüklenemedi."
+        }
+    }
+
+    private func replaceImage(with data: Data) async {
+        try? await pendingScans.remove(requestID: clientRequestID)
+        clientRequestID = UUID()
+        imageData = data
+        pendingMessage = nil
     }
 
     private func normalizedJPEG(_ data: Data) -> Data? {

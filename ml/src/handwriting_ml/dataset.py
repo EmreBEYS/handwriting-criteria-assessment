@@ -20,7 +20,7 @@ class HandwritingSample:
 
 ALLOWED_FIELD_TYPES = {"name", "student_number", "score"}
 ALLOWED_SPLITS = {"train", "validation", "test"}
-ALLOWED_DEVICE_CLASSES = {"iphone", "android", "scanner", "unknown"}
+ALLOWED_DEVICE_CLASSES = {"iphone", "scanner", "unknown"}
 ALLOWED_CAPTURE_CONDITIONS = {
     "controlled",
     "shadow",

@@ -2,7 +2,7 @@
 
 ## 1. Mimari İlkeler
 
-1. iOS ve Android yalnızca istemcidir; iş kuralları ortak backend'de yaşar.
+1. iOS yalnızca istemcidir; iş kuralları ortak backend'de yaşar.
 2. API sözleşmesi ve veritabanı şeması sürümlenir.
 3. Model çıktısı öneridir; düşük güven veya doğrulama hatasında öğretim elemanı
    sonucu görür, düzeltir ve onaylar.
@@ -17,7 +17,6 @@
 ```mermaid
 flowchart LR
     I[iOS / Swift] -->|HTTPS + JSON| A[Versioned Backend API]
-    D[Android / Kotlin] -->|HTTPS + JSON| A
     A --> DB[(PostgreSQL)]
     A --> OS[(Encrypted Object Storage)]
     A --> Q[Job Queue]
@@ -31,8 +30,7 @@ flowchart LR
 
 ### Mobil istemciler
 
-- iOS uygulaması Swift ve SwiftUI; Android uygulaması Kotlin ve Jetpack
-  Compose ile ayrı geliştirilebilir.
+- iOS uygulaması Swift ve SwiftUI ile geliştirilir. Android ürün kapsamı dışındadır.
 - Ortak davranış: giriş, bağlam seçimi, sınav tanımı, kamera yakalama, kalite
   kontrolü, kuyruk görünümü, sonuç doğrulama/düzeltme ve rapor indirme.
 - Ortak kod zorunlu değildir; API OpenAPI belgesinden üretilen istemciler ve
@@ -151,8 +149,8 @@ OpenAPI belgesi backend uygulaması başladığında sözleşmenin kaynağı ola
 
 ## 9. Kabul Edilen ve Ertelenen Kararlar
 
-Kabul edilenler: ortak backend/veritabanı/model; native Swift ve Kotlin
-istemciler; PostgreSQL; asenkron OCR; insan onayı; nesne deposu; dinamik soru
+Kabul edilenler: ortak backend/veritabanı/model; native Swift istemci;
+PostgreSQL; asenkron OCR; insan onayı; nesne deposu; dinamik soru
 modeli.
 
 İlk sürüm sonrasına ertelenenler: öğrenci bilgi sistemi entegrasyonu, tam
