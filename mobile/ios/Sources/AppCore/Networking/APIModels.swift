@@ -243,6 +243,57 @@ public struct ConfirmationResult: Codable, Hashable, Sendable {
     }
 }
 
+public struct QuestionAnalysis: Codable, Hashable, Identifiable, Sendable {
+    public var id: UUID { questionID }
+    public let questionID: UUID
+    public let questionNumber: Int
+    public let maximumScore: String
+    public let averageScore: String
+    public let successPercentage: String
+    public let responseCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case questionID = "question_id"
+        case questionNumber = "question_number"
+        case maximumScore = "maximum_score"
+        case averageScore = "average_score"
+        case successPercentage = "success_percentage"
+        case responseCount = "response_count"
+    }
+}
+
+public struct ProgramOutcomeAnalysis: Codable, Hashable, Identifiable, Sendable {
+    public var id: UUID { programOutcomeID }
+    public let programOutcomeID: UUID
+    public let code: String
+    public let description: String
+    public let achievedScore: String
+    public let maximumScore: String
+    public let successPercentage: String
+
+    enum CodingKeys: String, CodingKey {
+        case programOutcomeID = "program_outcome_id"
+        case code, description
+        case achievedScore = "achieved_score"
+        case maximumScore = "maximum_score"
+        case successPercentage = "success_percentage"
+    }
+}
+
+public struct ExamAnalysis: Codable, Hashable, Sendable {
+    public let examID: UUID
+    public let confirmedPaperCount: Int
+    public let questions: [QuestionAnalysis]
+    public let programOutcomes: [ProgramOutcomeAnalysis]
+
+    enum CodingKeys: String, CodingKey {
+        case examID = "exam_id"
+        case confirmedPaperCount = "confirmed_paper_count"
+        case questions
+        case programOutcomes = "program_outcomes"
+    }
+}
+
 public struct ExamSummary: Codable, Hashable, Identifiable, Sendable {
     public let id: UUID
     public let courseOfferingID: UUID

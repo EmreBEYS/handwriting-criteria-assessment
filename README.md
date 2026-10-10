@@ -77,6 +77,9 @@ metadatasını saklar.
 - **00-15 iOS Scan Queue & Human Review:** Ders/sınav seçimi, kamera veya
   fotoğraf yükleme, iş durumu takibi, tahmin düzeltme ve kesin sonucu kaydetme
   akışı tamamlandı. Ayrıntılar: [`docs/sprint-00-15.md`](docs/sprint-00-15.md).
+- **00-16 iOS End-to-End Integration & Testing:** Tekrarlanan yüklemelerde sabit
+  istek kimliği, insan onayı sonrası PÇ sonuç ekranı ve gerçek cihaz doğrulama
+  protokolü tamamlandı. Ayrıntılar: [`docs/sprint-00-16.md`](docs/sprint-00-16.md).
 
 ## Repository Structure
 
@@ -129,8 +132,8 @@ Open `mobile/ios/Package.swift` in Xcode and run the
 Home -> Capture / Upload -> Analysis -> Results
 ```
 
-Camera selection, upload networking, analysis, and real result rendering are
-deliberately inactive. Command-line verification is also available:
+Kamera/fotoğraf seçimi, güvenli yükleme, insan incelemesi, atomik onay ve PÇ
+sonuç akışı API'ye bağlıdır. Komut satırı doğrulaması da kullanılabilir:
 
 ```bash
 cd mobile/ios

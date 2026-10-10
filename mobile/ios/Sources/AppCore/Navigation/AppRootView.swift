@@ -64,10 +64,10 @@ private struct AuthenticatedRootView: View {
                         scanID: scanID,
                         offeringID: selection.offeringID
                     ) { result in
-                        path.append(.results(result))
+                        path.append(.results(result, selection))
                     }
-                case let .results(result):
-                    ResultsView(result: result) {
+                case let .results(result, selection):
+                    ResultsView(api: session.api, result: result, selection: selection) {
                         path.removeAll()
                     }
                 }

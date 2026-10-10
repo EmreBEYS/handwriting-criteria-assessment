@@ -10,6 +10,7 @@ struct CaptureUploadView: View {
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var imageData: Data?
+    @State private var clientRequestID = UUID()
     @State private var isUploading = false
     @State private var errorMessage: String?
 #if os(iOS)
@@ -146,7 +147,11 @@ struct CaptureUploadView: View {
         isUploading = true
         defer { isUploading = false }
         do {
-            let scan = try await api.uploadScan(examID: selection.examID, imageData: imageData)
+            let scan = try await api.uploadScan(
+                examID: selection.examID,
+                imageData: imageData,
+                clientRequestID: clientRequestID
+            )
             onUploaded(scan.id)
         } catch {
             errorMessage = error.localizedDescription

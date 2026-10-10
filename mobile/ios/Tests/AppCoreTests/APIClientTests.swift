@@ -136,3 +136,33 @@ func uploadBuildsIdempotentMultipartRequest() async throws {
     #expect(body.contains(requestID.uuidString))
     #expect(body.contains("filename=\"exam-paper.jpg\""))
 }
+
+@Test
+func loadsProgramOutcomeAnalysisForSelectedExam() async throws {
+    let examID = UUID()
+    let outcomeID = UUID()
+    let response = Data(
+        """
+        {"data":{"exam_id":"\(examID)","confirmed_paper_count":2,"questions":[],
+        "program_outcomes":[{"program_outcome_id":"\(outcomeID)","code":"PÇ1",
+        "description":"Problem çözme","achieved_score":"15.000",
+        "maximum_score":"20.000","success_percentage":"75.00"}]}}
+        """.utf8
+    )
+    let transport = StubTransport(responses: [(200, response)])
+    let store = InMemoryTokenStore(
+        tokens: TokenPair(accessToken: "access", refreshToken: "refresh", expiresIn: 900)
+    )
+    let client = APIClient(
+        baseURL: URL(string: "https://api.example.test")!,
+        transport: transport,
+        tokenStore: store
+    )
+
+    let analysis = try await client.examAnalysis(examID: examID)
+
+    #expect(analysis.confirmedPaperCount == 2)
+    #expect(analysis.programOutcomes.first?.successPercentage == "75.00")
+    let request = await transport.requests.first
+    #expect(request?.url?.path == "/api/v1/exams/\(examID)/po-analysis")
+}
