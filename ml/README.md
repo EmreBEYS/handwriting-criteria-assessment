@@ -24,3 +24,17 @@ Tekrar kullanılabilir üretim kodu `src/`, deney ayarları `configs/`, yalnızc
 keşif çalışmaları `notebooks/` altında tutulur. Her çıkarım model sürümünü
 kaydeder. Eğitim/değerlendirme veri ayrımı öğrenci bazında yapılmalı; düşük
 güvenli sonuçlar otomatik kesin puana dönüşmemelidir.
+
+Sprint 00-17 adds an aggregate-only evaluation command for approved, writer-disjoint
+validation and test crops:
+
+```bash
+evaluate-handwriting --manifest data/processed/manifest.jsonl \
+  --dataset-root data/processed --model models/emnist-digits-v1.pt \
+  --output ml/runs/emnist-digits-v1-evaluation.json
+```
+
+The command selects a low-confidence flag threshold on validation data and applies it
+unchanged to test data. It does not enable the model, change API configuration or bypass
+mandatory instructor confirmation. See
+[`../docs/sprint-00-17.md`](../docs/sprint-00-17.md).
