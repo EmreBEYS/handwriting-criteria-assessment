@@ -1,4 +1,8 @@
-# 00-01 — Gereksinimler
+# 00-01 — Gereksinimler (00-20 tarihsel kayıt)
+
+> **00-21 notu:** Hesap/giriş/PostgreSQL maddeleri 12 Ekim 2026 danışman
+> geri bildirimiyle geçersiz olmuştur. Güncel kapsam ve kabul ölçütleri için
+> [`sprint-00-21.md`](sprint-00-21.md) esas alınmalıdır.
 
 ## 1. Amaç ve Başarı Ölçütü
 

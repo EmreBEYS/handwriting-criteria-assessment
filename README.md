@@ -1,223 +1,73 @@
-# Exam Paper Assessment and PÇ Analysis
+# Handwriting Criteria Assessment
 
-Öğretim elemanlarının sınav kâğıtlarını mobil cihaz kamerasıyla seri biçimde
-okutup öğrenci ve soru puanlarını çıkarmasını, sonuçları PostgreSQL'de
-saklamasını ve Program Çıktısı (PÇ) analizleri ile Excel raporları üretmesini
-sağlayan bitirme projesi.
+Sabit sınav şablonundaki öğrenci adı, soru puanları ve genel notu iPhone/iPad
+kamerasıyla art arda okuyup soru–Program Çıktısı (PÇ) eşleşmeleriyle birlikte
+tek bir renkli Excel tablosunda biriktiren yerel iOS uygulaması.
 
-## Hedef Sistem
+## Sprint 00-21 ürün kararı
 
-- Öğretim elemanı kendi hesabıyla giriş yapar.
-- Akademik yıl, Güz/Bahar dönemi, ders ve Vize/Final/Bütünleme sınavını seçer.
-- Dinamik sayıdaki soruyu ve her sorunun PÇ ilişkisini tanımlar.
-- iOS (Swift) istemcisiyle kâğıtları art arda tarar.
-- Ortak backend görüntüyü işler, öğrenci/soru puanlarını çıkarır ve düşük
-  güvenli sonuçları kullanıcı onayına sunar.
-- Onaylı sonuç tek işlemle kaydedilir ve istemciye “okundu ve kaydedildi”
-  durumu döner.
-- Ders, sınav, soru ve PÇ bazlı analiz ile Excel çıktısı üretilir.
+12 Ekim 2026 danışman geri bildirimiyle önceki hesap, giriş ve PostgreSQL
+mimarisi aktif ürün kapsamından çıkarıldı. Uygulama artık oturum açmaz, sunucuya
+kişisel veri göndermez ve veritabanı gerektirmez. Belge tarama ile OCR cihazda
+Apple Vision/VisionKit kullanılarak yapılır.
 
-## Mimari Özet
+Aktif akış:
 
 ```text
-iOS (Swift) ── HTTPS/JSON ─ API + kimlik doğrulama ─ PostgreSQL
-                                  │
-                                  ├─ Nesne deposu (sınav görselleri)
-                                  └─ OCR/ML iş kuyruğu
+iOS belge kamerası
+        ↓ otomatik kenar algılama ve perspektif düzeltme
+Sabit şablon v1
+        ↓ öğrenci adı + 1…12 soru puanı + genel not
+Yeşil/sarı/kırmızı güven renkli seri sonuç satırları
+        ↓
+Gerçek renkli `.xlsx` çalışma kitabı
 ```
 
-iOS istemcisi sürümlü API sözleşmesini, backend'i, model hattını ve PostgreSQL
-şemasını kullanır. Ham görüntüler veritabanında değil, erişimi
-kısıtlı nesne deposunda tutulur; veritabanı yalnızca nesne anahtarını ve işlem
-metadatasını saklar.
+## 00-21 kapsamı
 
-## Sprint Durumu
+- iOS ve iPadOS'ta `VNDocumentCameraViewController` ile otomatik belge tarama
+- Sabit sınav şablonunda 1–12 arasında değişken soru sayısı
+- Her soru için düzenlenebilir azami puan ve PÇ kodu
+- Öğrenci adı, soru puanları ve kâğıtta yazılı genel not için yerel OCR
+- Soru puanlarından hesaplanan toplam ile yazılı genel not çapraz kontrolü
+- Belge kamerasındaki her sayfayı ayrı kâğıt sayıp aynı oturum tablosuna ekleme
+- Kontrol ekranına uğramadan seri OCR ve kümülatif Excel dışa aktarma
+- Öğrenci adı, genel not ve soru hücrelerini yeşil/sarı/kırmızı güven rengiyle işaretleme
+- Sonuçların Excel'in doğrudan açabildiği biçimlendirilmiş `.xlsx` çalışma kitabı olarak paylaşılması
+- OCR sonucunu nihai/otomatik not olarak kabul etmeme; renkler kullanıcıya doğruluk iddiası sunmaz
 
-- **00-01 Requirements & Architecture:** Gereksinimler ve hedef mimari
-  belgelendi. Ayrıntılar: [`docs/requirements.md`](docs/requirements.md) ve
-  [`docs/architecture.md`](docs/architecture.md).
-- **00-02 PostgreSQL Database Design:** İlişkisel model, kısıtlar ve ilk
-  migration hazırlandı. Ayrıntılar: [`docs/database-design.md`](docs/database-design.md)
-  ve [`database/README.md`](database/README.md).
-- **00-03 Backend API Foundation:** Ortam ayarları, PostgreSQL bağlantısı,
-  canlılık/hazır olma uçları ve merkezi API hata zarfı tamamlandı.
-- **00-04 Authentication & User System:** Kuruma bağlı öğretim elemanı kaydı,
-  Argon2id parola özeti, access/refresh JWT ve korumalı profil ucu tamamlandı.
-- **00-05 Course & Academic Structure:** Akademik yıl, dönem ve ders CRUD
-  uçları; ders açılışı; yıl/dönem filtreleri ve kurum izolasyonu tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-05.md`](docs/sprint-00-05.md).
-- **00-06 Exam Definition:** Atanmış ders açılışlarını listeleme; Vize, Final ve
-  Bütünleme sınavlarını taslak olarak oluşturma ve yönetme tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-06.md`](docs/sprint-00-06.md).
-- **00-07 Questions & PÇ Mapping:** Dinamik sorular, PÇ ağırlıkları ve toplam
-  puan/PÇ bütünlüğü denetlenen sınav etkinleştirme akışı tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-07.md`](docs/sprint-00-07.md).
-- **00-08 Student Roster & Enrollment:** Kurum öğrencileri, pasifleştirme ve
-  atanmış ders açılışlarına öğrenci kayıt yönetimi tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-08.md`](docs/sprint-00-08.md).
-- **00-09 Scan Upload & Job Queue:** Etkin sınava güvenli görsel yükleme,
-  istemci istek kimliğiyle mükerrerlik koruması ve iş durumu sorgulama tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-09.md`](docs/sprint-00-09.md).
-- **00-10 Exam Paper Layout Extraction:** Sınav kâğıdı yönlendirme/kalite
-  kontrolleri; ders, öğrenci ve dinamik PÇ puan hücresi çıkarımı tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-10.md`](docs/sprint-00-10.md).
-- **00-11 Handwriting Inference Worker:** Kuyruktaki görseli alan, OCR
-  tahminlerini ders/öğrenci/soru kurallarıyla doğrulayan ve insan incelemesine
-  hazırlayan worker tamamlandı. Ayrıntılar: [`docs/sprint-00-11.md`](docs/sprint-00-11.md).
-- **00-12 Human Review & Atomic Confirmation:** Öğrenci ve soru puanı
-  düzeltmeleri, atomik kesinleştirme, mükerrer kâğıt koruması ve denetim kaydı
-  tamamlandı. Ayrıntılar: [`docs/sprint-00-12.md`](docs/sprint-00-12.md).
-- **00-13 PÇ Analysis & Excel Export:** Yalnızca onaylı puanlardan soru/PÇ
-  analizi, özel nesne deposunda süreli Excel raporu ve yetkili indirme akışı
-  tamamlandı. Ayrıntılar: [`docs/sprint-00-13.md`](docs/sprint-00-13.md).
-- **00-14 iOS API & Secure Session Foundation:** Gerçek kurum girişi, Keychain
-  token saklama, oturum geri yükleme ve otomatik token yenileme tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-14.md`](docs/sprint-00-14.md).
-- **00-15 iOS Scan Queue & Human Review:** Ders/sınav seçimi, kamera veya
-  fotoğraf yükleme, iş durumu takibi, tahmin düzeltme ve kesin sonucu kaydetme
-  akışı tamamlandı. Ayrıntılar: [`docs/sprint-00-15.md`](docs/sprint-00-15.md).
-- **00-16 iOS End-to-End Integration & Testing:** Tekrarlanan yüklemelerde sabit
-  istek kimliği, insan onayı sonrası PÇ sonuç ekranı ve gerçek cihaz doğrulama
-  protokolü tamamlandı. Ayrıntılar: [`docs/sprint-00-16.md`](docs/sprint-00-16.md).
-- **00-17 OCR Accuracy & Model Optimization:** Yazıcı bazında ayrılmış manifest
-  üzerinde gerçek ölçüm, kalibrasyon, hata sınıflandırma ve doğrulama kümesinden
-  güven eşiği seçme hattı tamamlandı. Onaylı veri/model olmadığı için başarı oranı
-  yayımlanmadı. Ayrıntılar: [`docs/sprint-00-17.md`](docs/sprint-00-17.md).
+Android uygulaması bu repoda bulunmuyor ve 00-21 kapsamında var sayılmıyor.
+Android ekibi aynı sabit şablon ve güven eşiklerini ayrı istemcide uygulamalıdır.
 
-- **00-18 iOS Production Readiness & Resilient Scan Queue:** Android kapsam dışı
-  bırakılarak iOS'ta korumalı yerel bekleyen tarama, uygulama yeniden açıldığında
-  geri yükleme, aynı kimlikle tekrar deneme ve çıkışta veri temizleme tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-18.md`](docs/sprint-00-18.md).
+## Çalıştırma ve test
 
-- **00-19 System Testing, Security & Performance:** HTTPS/üretim güvenlik
-  kapıları, güvenlik başlıkları, görsel imza kontrolü, kuyruk sınırı, tek kullanımlı
-  refresh token rotasyonu, tam sistem testi, CI ve performans smoke aracı tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-19.md`](docs/sprint-00-19.md).
-- **00-20 Final Release, Documentation & Academic Demo:** v1.0.0 sürüm uyumu,
-  yapılandırılmış modelin worker'a bağlanması, container, dağıtım/geri dönüş,
-  güvenlik, akademik değerlendirme, demo ve sürüm kontrol listesi tamamlandı.
-  Ayrıntılar: [`docs/sprint-00-20.md`](docs/sprint-00-20.md).
+Gerçek uygulamayı çalıştırmak için `Package.swift` yerine
+`mobile/ios/HandwritingCriteriaAssessment.xcodeproj` dosyasını Xcode ile açın.
+`HandwritingCriteriaAssessment` şemasını ve bağlı iPhone/iPad'i seçin. İlk
+çalıştırmada target'ın **Signing & Capabilities** bölümünden kendi Apple
+geliştirici takımınızı seçmeniz gerekir. Kamera izin açıklaması projeye eklenmiştir.
+Belge kamerası simülatörde doğrulanamaz.
 
-**Kod yol haritası: 20/20 sprint tamamlandı.** Bu ifade üretim onayı veya OCR
-başarı iddiası değildir. Fiziksel iPhone, onaylı veri/model, staging PostgreSQL,
-özel nesne deposu ve hedef ortam performans kapıları
-[`docs/release-checklist.md`](docs/release-checklist.md) içinde açıkça beklemektedir.
-
-## Repository Structure
-
-```text
-handwriting-criteria-assessment/
-├── api/                    # Ortak backend ve API testleri
-├── contracts/              # Sürümlü istek/yanıt şemaları
-├── database/
-│   └── migrations/         # Sıralı PostgreSQL migration dosyaları
-├── data/                   # Yerel, anonimleştirilmiş ML verisi (Git dışı)
-├── docs/                   # Gereksinim, mimari, veri ve etik kararları
-├── ml/                     # OCR/puan çıkarma, eğitim ve değerlendirme
-├── mobile/                 # Swift iOS istemcisi
-├── models/                 # Yerel model çıktıları (Git dışı)
-└── tests/                  # Uçtan uca ve sözleşme testleri
-```
-
-## Başlangıç
-
-### Python API and ML workspace
-
-Python 3.11 or later is required:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[dev,ml]'
-uvicorn app.main:app --app-dir api --reload
-```
-
-Then open `http://127.0.0.1:8000/docs`. `GET /health/live` reports liveness and
-`GET /health/ready` verifies the PostgreSQL connection.
-`POST /v1/analyses` validates an image and intentionally returns
-`MODEL_NOT_CONFIGURED` until an approved model exists.
-
-Run Python checks from the repository root:
-
-```bash
-ruff check .
-pytest
-```
-
-### iOS SwiftUI skeleton
-
-Open `mobile/ios/Package.swift` in Xcode and run the
-`HandwritingCriteriaAssessmentApp` scheme. The scaffold demonstrates:
-
-```text
-Home -> Capture / Upload -> Analysis -> Results
-```
-
-Kamera/fotoğraf seçimi, güvenli yükleme, insan incelemesi, atomik onay ve PÇ
-sonuç akışı API'ye bağlıdır. Komut satırı doğrulaması da kullanılabilir:
+Komut satırı testleri:
 
 ```bash
 cd mobile/ios
 swift test
 ```
 
-Before collecting real data or enabling a model in production, complete and approve:
+Testler dinamik soru sayısını, güven eşiklerini, iki toplamın ayrı tutulmasını, çoklu
+öğrenci satırlarını ve renkli Excel çalışma kitabının geçerli XML yapısını kapsar.
 
-- `docs/criteria-definition.md`
-- `docs/ethics-and-privacy.md`
-- `docs/annotation-guidelines.md`
+## Dizinler
 
-See [Sprint 00-01](docs/sprint-00-01.md) for scope, closure criteria, and the
-questions reserved for the supervisor meeting.
+- `mobile/ios/Sources/AppCore/Sprint21`: aktif 00-21 uygulaması
+- `docs/sprint-00-21.md`: kapsam, kabul ölçütleri ve kalan doğrulamalar
+- `api`, `database`, `ml` ve iOS içindeki hariç tutulan eski klasörler: 00-20
+  geçmişini koruyan legacy referans; aktif uygulama tarafından derlenmez veya kullanılmaz
 
-## v1.0 Teslim ve Demo
-
-- Dağıtım: [`docs/deployment.md`](docs/deployment.md)
-- Akademik demo: [`docs/demo-runbook.md`](docs/demo-runbook.md)
-- Değerlendirme planı: [`docs/academic-evaluation.md`](docs/academic-evaluation.md)
-- Sürüm kapıları: [`docs/release-checklist.md`](docs/release-checklist.md)
-- Güvenlik bildirimi: [`SECURITY.md`](SECURITY.md)
-
-Worker yalnızca `HCA_MODEL_PATH` ile gösterilen, Sprint 00-17 protokolüyle
-değerlendirilmiş model dosyasını yükler. Yol boşsa veya dosya okunamıyorsa iş
-`MODEL_NOT_CONFIGURED` ile güvenli biçimde başarısız olur; fallback tahmin veya
-uydurma doğruluk kullanılmaz.
-
-### Ortam ve PostgreSQL
-
-Örnek bağlantı ve uygulama ayarlarını kopyalayın; gerçek parola ve anahtarları
-yalnızca Git tarafından yok sayılan `.env` dosyasında tutun:
-
-```bash
-cp .env.example .env
-```
-
-İlk şemayı boş bir PostgreSQL veritabanına uygulamak için:
-
-```bash
-psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f database/migrations/001_initial_schema.sql
-psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f database/migrations/002_academic_years.sql
-psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f database/migrations/003_exam_paper_predictions.sql
-psql "$HCA_DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f database/migrations/004_refresh_sessions.sql
-```
-
-Uygulama geliştirmeden önce açık ürün kararlarını
-[`docs/requirements.md`](docs/requirements.md) içindeki “Açık Kararlar”
-bölümünde kapatın. Gerçek sınav kâğıdı veya öğrenci verisi repoya eklenmemelidir.
-
-## Güvenlik ve Etik
-
-Sınav kâğıtları ve öğrenci başarı verileri kişisel veridir. En az yetki,
-şifreli aktarım/depolama, denetim kaydı, açık saklama-silme süreleri ve düşük
-güvenli model sonuçlarında insan onayı zorunludur. Sistem nihai notu öğretim
-elemanı onayı olmadan öğrenci bilgi sistemine aktarmamalıdır.
+Gerçek sınav kâğıtları kişisel veridir. Paylaşılan Excel dosyaları kurum
+politikasına göre korunup silinmeli; OCR çıktısı nihai not kabul edilmemelidir.
 
 ## License
 
-Kaynak kod için [LICENSE](LICENSE) geçerlidir. Veri kümeleri, önceden eğitilmiş
-ağırlıklar ve üçüncü taraf varlıklar ayrıca lisanslanmalıdır.
+Kaynak kod için [LICENSE](LICENSE) geçerlidir.

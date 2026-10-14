@@ -14,11 +14,30 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "AppCore"),
+        .target(
+            name: "AppCore",
+            exclude: [
+                "Features",
+                "Navigation",
+                "Networking",
+                "ScanQueue",
+                "Session",
+            ]
+        ),
         .executableTarget(
             name: "HandwritingCriteriaAssessmentApp",
-            dependencies: ["AppCore"]
+            dependencies: ["AppCore"],
+            exclude: ["HandwritingCriteriaAssessmentApp 2.swift"]
         ),
-        .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
+        .testTarget(
+            name: "AppCoreTests",
+            dependencies: ["AppCore"],
+            exclude: [
+                "APIClientTests.swift",
+                "AppRouteTests.swift",
+                "AppRouteTests 2.swift",
+                "PendingScanStoreTests.swift",
+            ]
+        ),
     ]
 )

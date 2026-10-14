@@ -1,26 +1,33 @@
 # Mobile Applications
 
-- `ios/`: Swift + SwiftUI istemcisi (kullanıcı tarafından geliştirilecek)
-- Android istemcisi ürün kapsamı dışındadır; desteklenen mobil istemci iOS'tur.
+## iOS — aktif 00-21 uygulaması
 
-İki istemci de aynı `/api/v1` OpenAPI sözleşmesini kullanır. Ortak akış; giriş,
-akademik bağlam/sınav seçimi, seri kamera çekimi, kalite uyarısı, işlem kuyruğu,
-tahmin doğrulama/düzeltme ve Excel indirmedir. Model ve PostgreSQL'e doğrudan
-bağlanmazlar; tüm erişim backend üzerinden yapılır.
+`ios/Package.swift` ile açılan SwiftUI uygulaması hesap veya backend gerektirmez.
+VisionKit belge kamerası sayfa kenarlarını otomatik bulur ve perspektifi düzeltir;
+Vision sabit şablondaki öğrenci adı, genel not ve dinamik soru puanı bölgelerini
+cihazda okur. Belge kamerasındaki her sayfa ayrı kâğıt sayılır; kontrol ekranı
+açılmadan aynı oturumun renkli Excel tablosuna yeni satır olarak eklenir.
 
-Mevcut iOS paketi gerçek kurum girişi, Keychain tabanlı oturum, token yenileme,
-ders/sınav seçimi, kamera veya fotoğraf yükleme, kuyruk takibi ve insan
-incelemesiyle atomik kayıt akışını içerir. Koyu zemin, turkuaz/açık mavi vurgu,
-yuvarlatılmış kartlar ve erişilebilir durum göstergelerinden oluşan ortak bir
-İnönü mobil görsel dili girişten sonuç ekranına kadar uygulanır.
-`HCA_API_BASE_URL` Xcode şemasında
-telefonun erişebildiği backend adresine ayarlanmalıdır. Kamera için uygulama
-target'ına `NSCameraUsageDescription` eklenmelidir.
+Fiziksel cihaz uygulaması için `ios/HandwritingCriteriaAssessment.xcodeproj`
+açılmalıdır. `Package.swift` yalnızca paket testleri içindir ve kamera demosunu
+`My Mac` üzerinde çalıştırmaz.
 
-Onay ekranından sonra istemci sınavın yetkili PÇ analizini yeniden yükler. Ağ
-hatasında PÇ isteği bağımsız olarak tekrar denenebilir; onay isteği tekrarlanmaz.
-Yükleme tekrarlarında aynı `client_request_id` korunarak backend'in mükerrerlik
-koruması kullanılır. Fiziksel cihaz, canlı PostgreSQL ve nesne deposu kontrol
-adımları için [`../docs/sprint-00-16.md`](../docs/sprint-00-16.md) belgesine bakın.
-Başarısız iOS yüklemeleri Data Protection ile korunan, yedekleme dışı yerel
-bekleyen tarama alanında tutulur ve aynı sınav yeniden açıldığında geri yüklenir.
+Güven eşikleri:
+
+- yeşil / yüksek: `>= 0.85`
+- sarı / kontrol önerilir: `>= 0.60` ve `< 0.85`
+- kırmızı / kontrol gerekli: `< 0.60`
+
+Excel dosyasında renkler “Genel Güven” metniyle de desteklenir. Okunan genel not
+ve hesaplanan soru toplamı ayrı sütunlardır; dosya nihai not onayı sayılmaz.
+
+## Android
+
+Bu repoda Android kodu yoktur. Android istemcisinin varlığı veya davranışı
+00-21 iOS uygulamasında varsayılmaz.
+
+## Legacy
+
+`Sources/AppCore/Features`, `Navigation`, `Networking`, `ScanQueue` ve `Session`
+00-20 hesap/backend mimarisinin tarihsel kodudur ve `Package.swift` tarafından
+aktif hedeften hariç tutulur.

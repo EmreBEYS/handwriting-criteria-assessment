@@ -1,29 +1,25 @@
-# Academic Demo Runbook
+# Sprint 00-21 Demo Runbook
 
-## Safe preparation
+## Hazırlık
 
-- Use synthetic students and exam sheets unless institutional approval explicitly permits real data.
-- Configure the iPhone, HTTPS API, PostgreSQL, private object storage and worker on an isolated demo
-  environment. Never use production credentials in slides or terminal history.
-- If an approved OCR bundle is unavailable, state this before the demo and show the explicit
-  `MODEL_NOT_CONFIGURED` path plus repository system tests. Do not substitute invented accuracy.
+- Gerçek öğrenci verisi yerine sentetik, sabit şablon v1 kâğıdı kullanın.
+- Şablondaki öğrenci adı, genel not ve sağdaki soru puanı hücrelerinin yerini değiştirmeyin.
+- Fiziksel iPhone/iPad'de kamera iznini verin; simülatörü kamera kanıtı saymayın.
 
-## 10-minute flow
+## Demo akışı
 
-1. Sign in on iOS and show that only the assigned course/exam appears.
-2. Capture a synthetic exam paper. Briefly disable connectivity, retry, and show that the same
-   request produces one scan job.
-3. Run/observe the worker. Open the review screen, explain confidence warnings and correct one score.
-4. Confirm the paper and show “Okundu ve Kaydedildi” with the authoritative total.
-5. Show the updated PÇ percentage and confirmed-paper count.
-6. Generate/download the Excel report and compare its score/PÇ values with the confirmed screen.
-7. Show the audit event, private object key (not the image), model version and request correlation ID.
-8. End with the limitations: human confirmation is mandatory; no SIS auto-submit; empirical OCR and
-   physical-device results must come from approved protocols.
+1. Uygulamanın giriş ekranı olmadan doğrudan tarama ekranında açıldığını gösterin.
+2. Ders adını, soru sayısını, azami puanları ve soru–PÇ eşleşmelerini ayarlayın.
+3. “Kâğıtları Tara” ile belge kamerasında birkaç sayfayı art arda çekin; kenar algılama ve perspektif düzeltmesini gösterin.
+4. Her sayfanın kontrol ekranı açılmadan ayrı öğrenci satırı olarak eklendiğini gösterin.
+5. Otomatik açılan kayıt ekranından kümülatif `sinav-sonuclari.xlsx` dosyasını kaydedin.
+6. Excel'de öğrenci adı, genel not ve soru puanı hücrelerinin yeşil/sarı/kırmızı işaretlerini açıklayın.
+7. “Yeni Kâğıtlar Ekle” ile bir seri daha tarayın ve güncel dosyada önceki satırların korunduğunu gösterin.
+8. Son olarak renklerin OCR güvenini gösterdiğini, nihai not onayı olmadığını ve Android'in bu repoda bulunmadığını belirtin.
 
-## Recovery paths
+## Hata yolları
 
-- Network failure: reopen the same exam and retry the protected pending scan.
-- Model unavailable: show the explicit failed job and do not claim OCR success.
-- Ambiguous identity or score: select the roster student/correct score and record a reason.
-- Export unavailable: retain the confirmed database result and retry export separately.
+- Kamera kullanılamıyorsa fiziksel cihaz ve izinleri kontrol edin.
+- Alan boş veya kırmızıysa sayfayı gölgesiz ve tam kadraj yeniden tarayın; Excel satırını gözle doğrulayın.
+- Puan azami değerin dışındaysa ilgili Excel hücresi kırmızıya düşer.
+- Şablon değiştiyse koordinatları kalibre etmeden doğruluk iddiasında bulunmayın.

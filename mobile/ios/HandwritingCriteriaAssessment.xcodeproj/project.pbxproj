@@ -1,0 +1,252 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* Sources/AppCore/DesignSystem/InonuTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* Sources/AppCore/DesignSystem/InonuTheme.swift */; };
+		A10000000000000000000002 /* Sources/AppCore/Sprint21/AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* Sources/AppCore/Sprint21/AppRootView.swift */; };
+		A10000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift */; };
+		A10000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift */; };
+		A10000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift */; };
+		A10000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* Sources/AppCore/DesignSystem/InonuTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/DesignSystem/InonuTheme.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000002 /* Sources/AppCore/Sprint21/AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/AppRootView.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/ExamExcelExporter.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/ExamModels.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/VisionExamReader.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/HandwritingCriteriaAssessmentIOSApp.swift; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000007 /* App/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = App/Info.plist; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000008 /* HandwritingCriteriaAssessment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandwritingCriteriaAssessment.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* App */,
+				A40000000000000000000003 /* Sources */,
+				A40000000000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000007 /* App/Info.plist */,
+			);
+			name = App;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000003 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift */,
+				A20000000000000000000001 /* Sources/AppCore/DesignSystem/InonuTheme.swift */,
+				A20000000000000000000002 /* Sources/AppCore/Sprint21/AppRootView.swift */,
+				A20000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift */,
+				A20000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift */,
+				A20000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000008 /* HandwritingCriteriaAssessment.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* HandwritingCriteriaAssessment */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A90000000000000000000002 /* Build configuration list for PBXNativeTarget "HandwritingCriteriaAssessment" */;
+			buildPhases = (
+				A30000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A30000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HandwritingCriteriaAssessment;
+			productName = HandwritingCriteriaAssessment;
+			productReference = A20000000000000000000008 /* HandwritingCriteriaAssessment.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A60000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = A90000000000000000000001 /* Build configuration list for PBXProject "HandwritingCriteriaAssessment" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A40000000000000000000001;
+			productRefGroup = A40000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000000000000000000001 /* HandwritingCriteriaAssessment */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A30000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift in Sources */,
+				A10000000000000000000001 /* Sources/AppCore/DesignSystem/InonuTheme.swift in Sources */,
+				A10000000000000000000002 /* Sources/AppCore/Sprint21/AppRootView.swift in Sources */,
+				A10000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift in Sources */,
+				A10000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift in Sources */,
+				A10000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A70000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A70000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A80000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 21;
+				DEVELOPMENT_TEAM = 94K58H7422;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.emrebeys.HandwritingCriteriaAssessment;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A80000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 21;
+				DEVELOPMENT_TEAM = 94K58H7422;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.emrebeys.HandwritingCriteriaAssessment;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A90000000000000000000001 /* Build configuration list for PBXProject "HandwritingCriteriaAssessment" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000001 /* Debug */,
+				A70000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A90000000000000000000002 /* Build configuration list for PBXNativeTarget "HandwritingCriteriaAssessment" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A80000000000000000000001 /* Debug */,
+				A80000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A60000000000000000000001 /* Project object */;
+}
