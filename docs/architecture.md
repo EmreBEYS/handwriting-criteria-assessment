@@ -1,4 +1,8 @@
-# 00-01 — Hedef Mimari
+# 00-01 — Hedef Mimari (00-20 tarihsel kayıt)
+
+> **00-21 notu:** 12 Ekim 2026 danışman kararıyla hesap, giriş ve PostgreSQL
+> aktif üründen çıkarılmıştır. Güncel yerel iOS mimarisi için
+> [`sprint-00-21.md`](sprint-00-21.md) esas alınmalıdır.
 
 ## 1. Mimari İlkeler
 

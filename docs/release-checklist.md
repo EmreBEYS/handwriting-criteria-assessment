@@ -1,5 +1,9 @@
 # v1.0 Release Checklist
 
+> Bu belge 00-20 sunucu sürümünün tarihsel kontrol listesidir. PostgreSQL,
+> hesap ve dağıtım kapıları 00-21 aktif ürününe uygulanmaz. Güncel kapılar
+> [`sprint-00-21.md`](sprint-00-21.md) içindedir.
+
 ## Completed in repository
 
 - [x] API, ML and iOS package lint/tests pass.

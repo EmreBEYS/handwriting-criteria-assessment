@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Sprint 00-21
+
+- Replaced the active account/API/PostgreSQL iOS flow with an on-device document scanning flow.
+- Added fixed-template Vision OCR for student name, variable question scores and written total.
+- Added editable question–PÇ mappings and accessible traffic-light confidence indicators.
+- Added multi-page serial scanning without a review screen and cumulative Excel output.
+- Added native `.xlsx` export with green/yellow/red confidence-colored cells.
+- Moved the 00-20 server-oriented implementation to legacy/reference status without claiming Android work.
+
 ## 1.0.0 — 2026-10-10
 
 - Completed the authenticated academic structure, exam, question/PÇ and roster APIs.
