@@ -2,7 +2,7 @@
 
 ## Sonuç
 
-00-21 Swift iOS belge kamerası, sabit şablon, seri sayfa, soru–PÇ ve renkli
+00-21 Swift iOS belge kamerası, gönderilen gerçek kâğıda kalibre sabit şablon, seri sayfa, soru–PÇ ve renkli
 Excel akışları korunmuştur. Genel not ve soru puanı hücreleri artık arkadaş
 projesindeki `digit-crnn-v3` modeliyle cihazda okunur. Öğrenci adı Apple Vision
 ile okunmaya devam eder; hedef şablonda henüz öğrenci numarası bölgesi olmadığı
@@ -48,6 +48,8 @@ Excel ve PÇ kodu değiştirilmeden adaptör değiştirilebilir.
   güveni en fazla `0.59` olduğundan sonuç otomatik kabul edilmez.
 - Excel'in yeşil/sarı/kırmızı hücreleri korunmuştur; `Genel Güven` sütunu ayrıca
   `Kontrol gerekli` yazar.
+- Dört puan hücresinden biri bile okunamazsa eksik değer sıfır kabul edilmez ve
+  `Hesaplanan Toplam` boş bırakılır.
 
 ## Kaynak modelin yayımlanmış ölçümleri
 
@@ -68,11 +70,10 @@ Bu değerler İnönü sınav kâğıdı kamera fotoğraflarında doğruluk iddia
   referansıyla eşleşti.
 - Apple Silicon macOS üzerinde 15 hücrelik çıkarım grubu `0,116 sn` sürdü. Bu
   yalnızca regresyon benchmark'ıdır; iPhone performans taahhüdü değildir.
-- Dört mevcut tarama/şablon/Excel testi ve beş yeni model/politika/kırpma testi
-  geçti: toplam 9 test, 0 hata.
-- Xcode proje dosyası biçim doğrulamasından geçti. Bu çalışma ortamının Xcode
-  süreçleri sistem modül önbelleğine yazamadığı için `generic/platform=iOS`
-  imzasız derleme burada tamamlanamadı; gerçek CI/macOS kapısı açık kalır.
+- Gerçek şablon koordinatı ve eksik puanın sıfıra dönüşmemesi dahil toplam 10
+  Swift testi geçti, 0 hata.
+- Xcode proje dosyası biçim doğrulamasından ve fiziksel iPhone hedefli Xcode
+  derlemesinden geçti.
 
 ## Lisans ve veri kapısı
 

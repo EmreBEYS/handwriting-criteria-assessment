@@ -42,8 +42,6 @@ public struct ExamQuestionTemplate: Identifiable, Codable, Hashable, Sendable {
 }
 
 public struct ExamTemplate: Codable, Hashable, Sendable {
-    public static let maximumQuestionCount = 12
-
     public var name: String
     public var courseTitle: String
     public var studentNameRegion: NormalizedRect
@@ -64,53 +62,36 @@ public struct ExamTemplate: Codable, Hashable, Sendable {
         self.questions = questions
     }
 
-    public static func inonuFixedV1(questionCount: Int = 5) -> ExamTemplate {
-        let count = min(max(questionCount, 1), maximumQuestionCount)
+    /// Coordinates measured from the supplied "Yapay Zeka 2026-Final -A"
+    /// sheet. They use a top-left origin after VisionKit page correction.
+    public static func inonuFixedV1() -> ExamTemplate {
+        let scoreRegions = [
+            NormalizedRect(x: 0.167484, y: 0.266414, width: 0.091503, height: 0.020202),
+            NormalizedRect(x: 0.258987, y: 0.266414, width: 0.091667, height: 0.020202),
+            NormalizedRect(x: 0.350654, y: 0.266414, width: 0.091667, height: 0.020202),
+            NormalizedRect(x: 0.442320, y: 0.266414, width: 0.090523, height: 0.020202),
+        ]
+        let outcomes = ["PÇ2", "PÇ1", "PÇ3", "PÇ2"]
         return ExamTemplate(
             name: "İnönü Sabit Sınav Şablonu v1",
             courseTitle: "Yapay Zekâ",
-            studentNameRegion: NormalizedRect(x: 0.19, y: 0.115, width: 0.55, height: 0.055),
-            totalScoreRegion: NormalizedRect(x: 0.78, y: 0.205, width: 0.14, height: 0.055),
-            questions: (1 ... count).map { question(number: $0) }
-        )
-    }
-
-    public mutating func setQuestionCount(_ requestedCount: Int) {
-        let count = min(max(requestedCount, 1), Self.maximumQuestionCount)
-        if count < questions.count {
-            questions.removeLast(questions.count - count)
-        } else if count > questions.count {
-            for number in (questions.count + 1) ... count {
-                questions.append(Self.question(number: number))
+            studentNameRegion: NormalizedRect(x: 0.578431, y: 0.110859, width: 0.231536, height: 0.024495),
+            totalScoreRegion: NormalizedRect(x: 0.167484, y: 0.286616, width: 0.365359, height: 0.020202),
+            questions: scoreRegions.indices.map { index in
+                ExamQuestionTemplate(
+                    number: index + 1,
+                    maximumScore: 20,
+                    programOutcome: outcomes[index],
+                    scoreRegion: scoreRegions[index]
+                )
             }
-        }
-        for index in questions.indices {
-            questions[index].number = index + 1
-            questions[index].scoreRegion = Self.scoreRegion(questionNumber: index + 1)
-        }
+        )
     }
 
     public var maximumTotalScore: Double {
         questions.reduce(0) { $0 + $1.maximumScore }
     }
 
-    private static func question(number: Int) -> ExamQuestionTemplate {
-        ExamQuestionTemplate(
-            number: number,
-            maximumScore: 20,
-            programOutcome: "PÇ\(number)",
-            scoreRegion: scoreRegion(questionNumber: number)
-        )
-    }
-
-    private static func scoreRegion(questionNumber: Int) -> NormalizedRect {
-        NormalizedRect(
-            x: 0.78,
-            y: 0.29 + (Double(questionNumber - 1) * 0.052),
-            width: 0.14,
-            height: 0.045
-        )
-    }
 }
 
 public enum ConfidenceLevel: String, Codable, CaseIterable, Sendable {
@@ -201,15 +182,24 @@ public struct ExamRecognition: Codable, Hashable, Sendable {
     public var questions: [QuestionRecognition]
 
     public var calculatedTotal: Double {
-        questions.reduce(0) { partial, question in
-            partial + (Double(question.score.value.replacingOccurrences(of: ",", with: ".")) ?? 0)
+        calculatedTotalIfComplete ?? 0
+    }
+
+    /// A missing OCR value is not a zero score. Keep the total absent until
+    /// every printed score cell has a numeric value.
+    public var calculatedTotalIfComplete: Double? {
+        let values = questions.compactMap {
+            Double($0.score.value.replacingOccurrences(of: ",", with: "."))
         }
+        guard values.count == questions.count else { return nil }
+        return values.reduce(0, +)
     }
 
     public var requiresReview: Bool {
         guard let declaredTotal = Double(totalScore.value.replacingOccurrences(of: ",", with: ".")) else {
             return true
         }
+        guard let calculatedTotal = calculatedTotalIfComplete else { return true }
         return studentName.requiresReview
             || totalScore.requiresReview
             || questions.contains { $0.score.requiresReview }

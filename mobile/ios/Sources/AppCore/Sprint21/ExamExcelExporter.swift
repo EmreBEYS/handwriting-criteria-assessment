@@ -36,7 +36,8 @@ public enum ExamExcelExporter {
                 textCell("B\(rowNumber)", result.studentName.value, style: styleIndex(for: result.studentName.level)),
                 textCell("C\(rowNumber)", result.courseTitle, style: 0),
                 valueCell("D\(rowNumber)", result.totalScore.value, style: styleIndex(for: result.totalScore.level)),
-                numberCell("E\(rowNumber)", result.calculatedTotal, style: 1),
+                result.calculatedTotalIfComplete.map { numberCell("E\(rowNumber)", $0, style: 1) }
+                    ?? textCell("E\(rowNumber)", "", style: 7),
                 textCell(
                     "F\(rowNumber)",
                     result.requiresReview ? "Kontrol gerekli" : overallLevel.title,

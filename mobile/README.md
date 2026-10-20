@@ -4,8 +4,8 @@
 
 `ios/Package.swift` ile açılan SwiftUI uygulaması hesap veya backend gerektirmez.
 VisionKit belge kamerası sayfa kenarlarını otomatik bulur ve perspektifi düzeltir;
-Vision sabit şablondaki öğrenci adını okur. Genel not ve dinamik soru puanı
-bölgeleri cihazdaki `digit-crnn-v3.onnx` modeliyle, ONNX Runtime 1.24.2 üzerinden
+Vision sabit şablondaki öğrenci adını okur. Paylaşılan kâğıttaki dört yatay puan
+hücresi ve `Not:` satırı cihazdaki `digit-crnn-v3.onnx` modeliyle, ONNX Runtime 1.24.2 üzerinden
 okunur. Belge kamerasındaki her sayfa ayrı kâğıt sayılır ve aynı oturumun renkli
 Excel tablosuna yeni satır olarak eklenir.
 
@@ -26,7 +26,8 @@ toplam–soru toplamı uyuşmazlıkları öğretim elemanı kontrolü ister. Mod
 bu teknik geri dönüşün güveni `0.59` ile sınırlandığı için kesin kabul edilmez.
 
 Excel dosyasında renkler “Genel Güven” metniyle de desteklenir. Okunan genel not
-ve hesaplanan soru toplamı ayrı sütunlardır; dosya nihai not onayı sayılmaz.
+ve hesaplanan soru toplamı ayrı sütunlardır. Eksik puanlar sıfır sayılmaz;
+hesaplanan toplam eksik bırakılır. Dosya nihai not onayı sayılmaz.
 
 ## Android
 

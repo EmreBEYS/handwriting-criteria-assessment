@@ -18,8 +18,8 @@ Aktif akış:
 ```text
 iOS belge kamerası
         ↓ otomatik kenar algılama ve perspektif düzeltme
-Sabit şablon v1
-        ↓ öğrenci adı (Vision) + 1…12 soru puanı ve genel not (ONNX)
+Yapay Zeka 2026-Final A sabit şablonu
+        ↓ öğrenci adı (Vision) + yatay S1–S4 puanları ve Not satırı (ONNX)
 Yeşil/sarı/kırmızı güven renkli seri sonuç satırları
         ↓
 Gerçek renkli `.xlsx` çalışma kitabı
@@ -28,8 +28,8 @@ Gerçek renkli `.xlsx` çalışma kitabı
 ## 00-22 kapsamı
 
 - iOS ve iPadOS'ta `VNDocumentCameraViewController` ile otomatik belge tarama
-- Sabit sınav şablonunda 1–12 arasında değişken soru sayısı
-- Her soru için düzenlenebilir azami puan ve PÇ kodu
+- Paylaşılan sınav kâğıdındaki dört yatay puan hücresi
+- Sabit `S1→PÇ2`, `S2→PÇ1`, `S3→PÇ3`, `S4→PÇ2` ilişkisi ve düzenlenebilir azami puanlar
 - Öğrenci adı, soru puanları ve kâğıtta yazılı genel not için yerel OCR
 - Soru puanlarından hesaplanan toplam ile yazılı genel not çapraz kontrolü
 - Belge kamerasındaki her sayfayı ayrı kâğıt sayıp aynı oturum tablosuna ekleme
@@ -60,7 +60,7 @@ cd mobile/ios
 swift test
 ```
 
-Testler dinamik soru sayısını, güven eşiklerini, iki toplamın ayrı tutulmasını,
+Testler gerçek kâğıt koordinatlarını, güven eşiklerini, iki toplamın ayrı tutulmasını,
 çoklu öğrenci satırlarını, renkli Excel'i ve ONNX ön işleme/çıkarım eşitliğini kapsar.
 
 ## Dizinler

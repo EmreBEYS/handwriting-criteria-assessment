@@ -100,15 +100,9 @@ public struct AppRootView: View {
                     .font(.headline)
                 TextField("Ders adı", text: $template.courseTitle)
                     .textFieldStyle(.roundedBorder)
-                Stepper(
-                    "Soru sayısı: \(template.questions.count)",
-                    value: Binding(
-                        get: { template.questions.count },
-                        set: { template.setQuestionCount($0) }
-                    ),
-                    in: 1 ... ExamTemplate.maximumQuestionCount
-                )
-                Text("Şablon üzerindeki ad, genel not ve puan hücrelerinin konumu sabittir; soru satırları seçilen sayıya göre okunur.")
+                Label("Sabit dört puan hücresi", systemImage: "rectangle.grid.1x2")
+                    .font(.subheadline.bold())
+                Text("Ad-soyad, Not satırı ve S1–S4 puan hücreleri gönderilen Yapay Zeka 2026-Final A kâğıdına göre okunur.")
                     .font(.caption)
                     .foregroundStyle(InonuTheme.textSecondary)
             }

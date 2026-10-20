@@ -9,17 +9,16 @@ import Testing
     #expect(ConfidenceLevel(score: 0.599) == .low)
 }
 
-@Test func fixedTemplateSupportsVariableQuestionCounts() {
-    var template = ExamTemplate.inonuFixedV1(questionCount: 3)
-    template.questions[0].programOutcome = "PÇ-A"
-    template.setQuestionCount(7)
+@Test func fixedTemplateMatchesProvidedPaper() {
+    let template = ExamTemplate.inonuFixedV1()
 
-    #expect(template.questions.count == 7)
-    #expect(template.questions[0].programOutcome == "PÇ-A")
-    #expect(template.questions.map(\.number) == Array(1 ... 7))
-
-    template.setQuestionCount(2)
-    #expect(template.questions.map(\.number) == [1, 2])
+    #expect(template.questions.count == 4)
+    #expect(template.questions.map(\.number) == [1, 2, 3, 4])
+    #expect(template.questions.map(\.programOutcome) == ["PÇ2", "PÇ1", "PÇ3", "PÇ2"])
+    #expect(template.studentNameRegion == NormalizedRect(x: 0.578431, y: 0.110859, width: 0.231536, height: 0.024495))
+    #expect(template.questions[0].scoreRegion == NormalizedRect(x: 0.167484, y: 0.266414, width: 0.091503, height: 0.020202))
+    #expect(template.questions[3].scoreRegion == NormalizedRect(x: 0.442320, y: 0.266414, width: 0.090523, height: 0.020202))
+    #expect(template.totalScoreRegion == NormalizedRect(x: 0.167484, y: 0.286616, width: 0.365359, height: 0.020202))
 }
 
 @Test func writtenAndCalculatedTotalsRemainSeparate() {
@@ -39,6 +38,28 @@ import Testing
 
     #expect(result.calculatedTotal == 15)
     #expect(result.totalScore.value == "14")
+}
+
+@Test func missingQuestionScoreDoesNotBecomeCalculatedZero() {
+    let result = ExamRecognition(
+        templateName: "v1",
+        courseTitle: "Yapay Zekâ",
+        studentName: RecognizedField(value: "Ada", confidence: 0.95),
+        totalScore: RecognizedField(value: "", confidence: 0),
+        questions: [
+            QuestionRecognition(
+                number: 1,
+                programOutcome: "PÇ2",
+                maximumScore: 20,
+                score: RecognizedField(value: "", confidence: 0, source: .onnxDigitCRNN)
+            ),
+        ]
+    )
+
+    #expect(result.calculatedTotalIfComplete == nil)
+    let workbook = String(decoding: ExamExcelExporter.data(for: [result]), as: UTF8.self)
+    #expect(workbook.contains("<c r=\"E5\" s=\"7\" t=\"inlineStr\"><is><t xml:space=\"preserve\"></t></is></c>"))
+    #expect(!workbook.contains("<c r=\"E5\" s=\"1\" t=\"n\"><v>0.0</v></c>"))
 }
 
 @Test func excelWorkbookContainsRowsQuestionOutcomesAndTrafficLightStyles() {
