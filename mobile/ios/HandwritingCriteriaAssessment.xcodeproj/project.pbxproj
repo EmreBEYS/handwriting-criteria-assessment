@@ -28,7 +28,7 @@
 		A20000000000000000000007 /* App/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = App/Info.plist; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000008 /* HandwritingCriteriaAssessment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandwritingCriteriaAssessment.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000009 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/DigitONNXRecognizer.swift; sourceTree = SOURCE_ROOT; };
-		A2000000000000000000000A /* Sources/AppCore/Resources/digit-crnn-v3.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sources/AppCore/Resources/digit-crnn-v3.onnx; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000A /* Sources/AppCore/Resources/digit-crnn-v3.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sources/AppCore/Resources/digit-crnn-v3.onnx"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
