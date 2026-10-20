@@ -14,7 +14,7 @@ public enum ExamExcelExporter {
             textCell("C2", "Düşük güven", style: 7),
         ], height: 24))
         rows.append(row(3, [
-            textCell("A3", "Her satır bir sınav kâğıdıdır. Renkler OCR okuma güvenini gösterir.", style: 3),
+            textCell("A3", "Her satır bir sınav kâğıdıdır. digit-crnn-v3 için 0,99 altı tahminler insan kontrolü ister; renkler OCR güvenini gösterir.", style: 3),
         ]))
 
         let headers = ["Sıra", "Öğrenci Adı", "Ders", "Okunan Genel Not", "Hesaplanan Toplam", "Genel Güven"]
@@ -36,8 +36,13 @@ public enum ExamExcelExporter {
                 textCell("B\(rowNumber)", result.studentName.value, style: styleIndex(for: result.studentName.level)),
                 textCell("C\(rowNumber)", result.courseTitle, style: 0),
                 valueCell("D\(rowNumber)", result.totalScore.value, style: styleIndex(for: result.totalScore.level)),
-                numberCell("E\(rowNumber)", result.calculatedTotal, style: 1),
-                textCell("F\(rowNumber)", overallLevel.title, style: styleIndex(for: overallLevel)),
+                result.calculatedTotalIfComplete.map { numberCell("E\(rowNumber)", $0, style: 1) }
+                    ?? textCell("E\(rowNumber)", "", style: 7),
+                textCell(
+                    "F\(rowNumber)",
+                    result.requiresReview ? "Kontrol gerekli" : overallLevel.title,
+                    style: styleIndex(for: result.requiresReview && overallLevel == .high ? .medium : overallLevel)
+                ),
             ]
             for (offset, number) in questionNumbers.enumerated() {
                 let reference = "\(excelColumnName(offset + 7))\(rowNumber)"

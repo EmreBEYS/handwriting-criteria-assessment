@@ -33,6 +33,7 @@ ml/runs/
 ml/logs/
 *.ckpt
 *.onnx
+!mobile/ios/Sources/AppCore/Resources/digit-crnn-v3.onnx
 *.pt
 *.pth
 *.tflite
