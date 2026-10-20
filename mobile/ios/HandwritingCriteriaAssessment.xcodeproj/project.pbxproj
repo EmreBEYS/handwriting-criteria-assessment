@@ -13,6 +13,9 @@
 		A10000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift */; };
 		A10000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift */; };
 		A10000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift */; };
+		A10000000000000000000007 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift */; };
+		A10000000000000000000008 /* Sources/AppCore/Resources/digit-crnn-v3.onnx in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* Sources/AppCore/Resources/digit-crnn-v3.onnx */; };
+		A10000000000000000000009 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000001 /* onnxruntime */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,8 @@
 		A20000000000000000000006 /* App/HandwritingCriteriaAssessmentIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/HandwritingCriteriaAssessmentIOSApp.swift; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000007 /* App/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = App/Info.plist; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000008 /* HandwritingCriteriaAssessment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HandwritingCriteriaAssessment.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000009 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppCore/Sprint21/DigitONNXRecognizer.swift; sourceTree = SOURCE_ROOT; };
+		A2000000000000000000000A /* Sources/AppCore/Resources/digit-crnn-v3.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sources/AppCore/Resources/digit-crnn-v3.onnx; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,6 +36,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000009 /* onnxruntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,6 +69,8 @@
 				A20000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift */,
 				A20000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift */,
 				A20000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift */,
+				A20000000000000000000009 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift */,
+				A2000000000000000000000A /* Sources/AppCore/Resources/digit-crnn-v3.onnx */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -91,6 +99,9 @@
 			dependencies = (
 			);
 			name = HandwritingCriteriaAssessment;
+			packageProductDependencies = (
+				AA0000000000000000000001 /* onnxruntime */,
+			);
 			productName = HandwritingCriteriaAssessment;
 			productReference = A20000000000000000000008 /* HandwritingCriteriaAssessment.app */;
 			productType = "com.apple.product-type.application";
@@ -119,6 +130,9 @@
 				Base,
 			);
 			mainGroup = A40000000000000000000001;
+			packageReferences = (
+				AB0000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
+			);
 			productRefGroup = A40000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -133,6 +147,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000008 /* Sources/AppCore/Resources/digit-crnn-v3.onnx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +164,7 @@
 				A10000000000000000000003 /* Sources/AppCore/Sprint21/ExamExcelExporter.swift in Sources */,
 				A10000000000000000000004 /* Sources/AppCore/Sprint21/ExamModels.swift in Sources */,
 				A10000000000000000000005 /* Sources/AppCore/Sprint21/VisionExamReader.swift in Sources */,
+				A10000000000000000000007 /* Sources/AppCore/Sprint21/DigitONNXRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,12 +207,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = 94K58H7422;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.emrebeys.HandwritingCriteriaAssessment;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -210,12 +226,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = 94K58H7422;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.emrebeys.HandwritingCriteriaAssessment;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -247,6 +263,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AB0000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
+			requirement = {
+				kind = exactVersion;
+				version = 1.24.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA0000000000000000000001 /* onnxruntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AB0000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
+			productName = onnxruntime;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A60000000000000000000001 /* Project object */;
 }

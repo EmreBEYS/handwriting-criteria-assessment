@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased — Sprint 00-21
+## Unreleased — Sprint 00-22
+
+- Integrated the attributed `digit-crnn-v3` ONNX handwritten numeric model behind a pinned ONNX Runtime adapter.
+- Ported the source Rust/Python preprocessing and greedy CTC decoding contract to Swift.
+- Added the calibrated `0.99` review gate, correction/blank/total-mismatch review flags and a fail-safe Apple Vision fallback.
+- Added 15-fixture preprocessing/inference parity and regression benchmark tests while keeping all Sprint 00-21 tests passing.
+- Documented the source commit, model hash, measured limits, verbal permission and unresolved upstream/data license gates.
+
+## Sprint 00-21
 
 - Replaced the active account/API/PostgreSQL iOS flow with an on-device document scanning flow.
 - Added fixed-template Vision OCR for student name, variable question scores and written total.

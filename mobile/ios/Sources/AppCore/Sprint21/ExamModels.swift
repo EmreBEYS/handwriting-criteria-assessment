@@ -137,16 +137,38 @@ public enum ConfidenceLevel: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum RecognitionSource: String, Codable, Sendable {
+    case onnxDigitCRNN = "digit-crnn-v3"
+    case appleVisionText = "apple-vision-text"
+    case appleVisionFallback = "apple-vision-fallback"
+}
+
 public struct RecognizedField: Codable, Hashable, Sendable {
     public var value: String
     public let confidence: Double
+    public let source: RecognitionSource
 
-    public init(value: String, confidence: Double) {
+    public init(
+        value: String,
+        confidence: Double,
+        source: RecognitionSource = .appleVisionText
+    ) {
         self.value = value
         self.confidence = min(max(confidence, 0), 1)
+        self.source = source
     }
 
     public var level: ConfidenceLevel { ConfidenceLevel(score: confidence) }
+
+    /// The CRNN was calibrated at 0.99 for automatic acceptance. Blank and
+    /// crossed-out fields always need an instructor even when confidence is high.
+    public var requiresReview: Bool {
+        value.isEmpty
+            || value.contains("~")
+            || (source == .onnxDigitCRNN && confidence < DigitRecognizerContract.automaticAcceptanceThreshold)
+            || source == .appleVisionFallback
+            || confidence < 0.60
+    }
 }
 
 public struct QuestionRecognition: Identifiable, Codable, Hashable, Sendable {
@@ -182,6 +204,21 @@ public struct ExamRecognition: Codable, Hashable, Sendable {
         questions.reduce(0) { partial, question in
             partial + (Double(question.score.value.replacingOccurrences(of: ",", with: ".")) ?? 0)
         }
+    }
+
+    public var requiresReview: Bool {
+        guard let declaredTotal = Double(totalScore.value.replacingOccurrences(of: ",", with: ".")) else {
+            return true
+        }
+        return studentName.requiresReview
+            || totalScore.requiresReview
+            || questions.contains { $0.score.requiresReview }
+            || abs(calculatedTotal - declaredTotal) > 0.001
+    }
+
+    public var reviewFieldCount: Int {
+        [studentName, totalScore].filter(\.requiresReview).count
+            + questions.map(\.score).filter(\.requiresReview).count
     }
 
 }

@@ -4,12 +4,14 @@ Sabit sınav şablonundaki öğrenci adı, soru puanları ve genel notu iPhone/i
 kamerasıyla art arda okuyup soru–Program Çıktısı (PÇ) eşleşmeleriyle birlikte
 tek bir renkli Excel tablosunda biriktiren yerel iOS uygulaması.
 
-## Sprint 00-21 ürün kararı
+## Sprint 00-22 ürün kararı
 
 12 Ekim 2026 danışman geri bildirimiyle önceki hesap, giriş ve PostgreSQL
 mimarisi aktif ürün kapsamından çıkarıldı. Uygulama artık oturum açmaz, sunucuya
 kişisel veri göndermez ve veritabanı gerektirmez. Belge tarama ile OCR cihazda
-Apple Vision/VisionKit kullanılarak yapılır.
+VisionKit, Apple Vision ve cihazdaki `digit-crnn-v3` ONNX modeli kullanılarak
+yapılır. Öğrenci adı Apple Vision'da kalır; genel not ve soru puanları model
+adaptöründen geçer.
 
 Aktif akış:
 
@@ -17,13 +19,13 @@ Aktif akış:
 iOS belge kamerası
         ↓ otomatik kenar algılama ve perspektif düzeltme
 Sabit şablon v1
-        ↓ öğrenci adı + 1…12 soru puanı + genel not
+        ↓ öğrenci adı (Vision) + 1…12 soru puanı ve genel not (ONNX)
 Yeşil/sarı/kırmızı güven renkli seri sonuç satırları
         ↓
 Gerçek renkli `.xlsx` çalışma kitabı
 ```
 
-## 00-21 kapsamı
+## 00-22 kapsamı
 
 - iOS ve iPadOS'ta `VNDocumentCameraViewController` ile otomatik belge tarama
 - Sabit sınav şablonunda 1–12 arasında değişken soru sayısı
@@ -35,6 +37,9 @@ Gerçek renkli `.xlsx` çalışma kitabı
 - Öğrenci adı, genel not ve soru hücrelerini yeşil/sarı/kırmızı güven rengiyle işaretleme
 - Sonuçların Excel'in doğrudan açabildiği biçimlendirilmiş `.xlsx` çalışma kitabı olarak paylaşılması
 - OCR sonucunu nihai/otomatik not olarak kabul etmeme; renkler kullanıcıya doğruluk iddiası sunmaz
+- `0.99` altı model güvenini, boş/düzeltilmiş alanları ve toplam uyuşmazlığını incelemeye gönderme
+- Model/çalışma zamanı hatasında düşük güvenli Apple Vision geri dönüşü
+- Kaynak Rust/Python ön işleme ve CTC çözme sözleşmesiyle 15 fixture eşitlik testi
 
 Android uygulaması bu repoda bulunmuyor ve 00-21 kapsamında var sayılmıyor.
 Android ekibi aynı sabit şablon ve güven eşiklerini ayrı istemcide uygulamalıdır.
@@ -55,13 +60,13 @@ cd mobile/ios
 swift test
 ```
 
-Testler dinamik soru sayısını, güven eşiklerini, iki toplamın ayrı tutulmasını, çoklu
-öğrenci satırlarını ve renkli Excel çalışma kitabının geçerli XML yapısını kapsar.
+Testler dinamik soru sayısını, güven eşiklerini, iki toplamın ayrı tutulmasını,
+çoklu öğrenci satırlarını, renkli Excel'i ve ONNX ön işleme/çıkarım eşitliğini kapsar.
 
 ## Dizinler
 
-- `mobile/ios/Sources/AppCore/Sprint21`: aktif 00-21 uygulaması
-- `docs/sprint-00-21.md`: kapsam, kabul ölçütleri ve kalan doğrulamalar
+- `mobile/ios/Sources/AppCore/Sprint21`: korunmuş uygulama akışı ve 00-22 model adaptörü
+- `docs/sprint-00-22.md`: entegrasyon, ölçümler, kabul ölçütleri ve kalan kapılar
 - `api`, `database`, `ml` ve iOS içindeki hariç tutulan eski klasörler: 00-20
   geçmişini koruyan legacy referans; aktif uygulama tarafından derlenmez veya kullanılmaz
 
@@ -70,4 +75,6 @@ politikasına göre korunup silinmeli; OCR çıktısı nihai not kabul edilmemel
 
 ## License
 
-Kaynak kod için [LICENSE](LICENSE) geçerlidir.
+Projenin özgün kaynak kodu için [LICENSE](LICENSE) geçerlidir. Bundled model,
+fixture'lar ve ONNX Runtime için [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+ayrıca geçerlidir; model ticari kullanım için temizlenmiş sayılmamalıdır.

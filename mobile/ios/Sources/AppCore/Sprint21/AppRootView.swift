@@ -18,7 +18,7 @@ public struct AppRootView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         ScreenTitle(
-                            eyebrow: "Sprint 00-21",
+                            eyebrow: "Sprint 00-22",
                             title: "Seri sınav kâğıdı tara",
                             subtitle: "Her sayfayı otomatik oku ve aynı renkli Excel tablosuna yeni satır olarak ekle."
                         )
@@ -146,12 +146,21 @@ public struct AppRootView: View {
                 Label("\(results.count) kâğıt Excel tablosuna eklendi", systemImage: "tablecells.fill")
                     .font(.headline)
                     .foregroundStyle(InonuTheme.turquoise)
+                let reviewCount = results.filter(\.requiresReview).count
+                if reviewCount > 0 {
+                    Label(
+                        "\(reviewCount) kâğıtta model güveni, boş/düzeltilmiş alan veya toplam uyuşmazlığı nedeniyle kontrol gerekli",
+                        systemImage: "person.crop.circle.badge.exclamationmark"
+                    )
+                    .font(.caption.bold())
+                    .foregroundStyle(.yellow)
+                }
                 HStack(spacing: 8) {
                     ConfidenceLegend(title: "Yeşil", color: InonuTheme.turquoise)
                     ConfidenceLegend(title: "Sarı", color: .yellow)
                     ConfidenceLegend(title: "Kırmızı", color: InonuTheme.danger)
                 }
-                Text("Dosyada her kâğıt ayrı satırdır. Öğrenci adı, genel not ve soru puanları okuma güvenine göre renklendirilir.")
+                Text("Rakam hücreleri cihazdaki digit-crnn-v3 modeliyle okunur. 0,99 altı tahminler ve teknik yedek okumalar öğretim elemanı kontrolü ister; Excel renkleri güven düzeyini gösterir.")
                     .font(.caption)
                     .foregroundStyle(InonuTheme.textSecondary)
                 Button {
