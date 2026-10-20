@@ -51,6 +51,14 @@ Excel ve PÇ kodu değiştirilmeden adaptör değiştirilebilir.
 - Dört puan hücresinden biri bile okunamazsa eksik değer sıfır kabul edilmez ve
   `Hesaplanan Toplam` boş bırakılır.
 
+## Hocayla doğrulanacak bilinen konu
+
+Fiziksel iPhone denemesinde yatay S1–S4 hücreleri gerçek kâğıda yeniden
+kalibre edilmiştir. `Not:` satırındaki genel toplam ise bazı el yazılarında
+yanlış okunabilmektedir. Bu alanın ürün kapsamında otomatik okunup okunmayacağı,
+soru puanlarından hesaplanan toplamın yeterli olup olmadığı ve kabul eşiği
+danışmanla kararlaştırılmadan entegrasyon tamamlanmış veya yayıma hazır sayılmaz.
+
 ## Kaynak modelin yayımlanmış ölçümleri
 
 Kaynak depodaki JSON ölçümlerine göre sentetik test kümesinde alan bazlı tam
